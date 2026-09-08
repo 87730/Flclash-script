@@ -1,6 +1,6 @@
-# proxy_DNS_rules
+# flclash-script
 
-专为 FlClash 与 Mihomo (Clash Meta) 深度调优的轻量配置覆写脚本。
+FlClash 与 Mihomo (Clash Meta) 精简配置覆写脚本。
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -14,13 +14,13 @@
 在 FlClash、Clash Verge Rev 或 Mihomo Party 的配置覆写中填入以下任一链接即可：
 
 ```text
-https://raw.githubusercontent.com/87730/proxy_DNS_rules/main/flclash.js
+https://raw.githubusercontent.com/87730/flclash-script/main/flclash.js
 ```
 
 或者：
 
 ```text
-https://raw.githubusercontent.com/87730/proxy_DNS_rules/main/mihomoScript.js
+https://raw.githubusercontent.com/87730/flclash-script/main/mihomoScript.js
 ```
 
 ---
