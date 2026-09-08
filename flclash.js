@@ -1,6 +1,6 @@
 /**
  * FlClash & Mihomo 精简配置覆写脚本
- * 仓库地址：https://github.com/87730/flclash-script
+ * 仓库地址：https://github.com/87730/Flclash-script
  * 原始上游：https://github.com/AIsouler/MyClash
  */
 
