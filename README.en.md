@@ -1,6 +1,6 @@
-# proxy_DNS_rules
+# flclash-script
 
-A lightweight, deeply optimized configuration override script tailored for FlClash and Mihomo (Clash Meta).
+A lightweight configuration override script tailored for FlClash and Mihomo (Clash Meta).
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -14,13 +14,13 @@ A lightweight, deeply optimized configuration override script tailored for FlCla
 Enter either of the following raw URLs into the script override settings in FlClash, Clash Verge Rev, or Mihomo Party:
 
 ```text
-https://raw.githubusercontent.com/87730/proxy_DNS_rules/main/flclash.js
+https://raw.githubusercontent.com/87730/flclash-script/main/flclash.js
 ```
 
 or:
 
 ```text
-https://raw.githubusercontent.com/87730/proxy_DNS_rules/main/mihomoScript.js
+https://raw.githubusercontent.com/87730/flclash-script/main/mihomoScript.js
 ```
 
 ---
