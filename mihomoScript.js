@@ -1,8 +1,7 @@
 /**
- * mihomo配置覆写脚本（全量版）
- * 作者：AIsouler
- * 源仓库：https://github.com/AIsouler/MyClash
- * 脚本链接：https://raw.githubusercontent.com/AIsouler/MyClash/main/Script/mihomoScript.js
+ * FlClash & Mihomo 精简配置覆写脚本
+ * 仓库地址：https://github.com/87730/flclash-script
+ * 原始上游：https://github.com/AIsouler/MyClash
  */
 
 // --- 静态配置区域 ---
