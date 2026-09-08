@@ -725,7 +725,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
     let defaultSelected = svc.defaultSelected;
     if (defaultSelected) {
       const matched = groupProxies.find((p) => p === defaultSelected || p.includes(defaultSelected));
-      if (matched) defaultSelected = matched;
+      defaultSelected = matched || undefined;
     }
 
     functionalGroups.push({
