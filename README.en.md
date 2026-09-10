@@ -21,8 +21,8 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ## Key Features
 
-- **Ultra-Clean & Zero Redundancy**: Completely eliminates bloated regional sub-groups, app-specific routing, and auto-latency test groups. The UI features only 3 essential cards, eliminating endless scrolling and IP hopping.
-- **Pure Three-Stage Routing**: LAN direct -> Block foreign QUIC (UDP 443) -> China domains & IPs direct -> All foreign traffic proxied via master control (China traffic direct, foreign traffic proxied).
+- **Ultra-Clean & Just 2 Cards**: Completely eliminates regional groups, app routing, auto-latency tests, and redundant fallback cards. The main UI features strictly 2 cards: `默认代理` (Master Proxy) and `直连` (Direct).
+- **Pure Closed-Loop Routing**: LAN direct -> Block foreign QUIC (UDP 443) -> China domains & IPs direct -> All foreign traffic and final fallback routed through `默认代理` (China traffic direct, foreign traffic proxied).
 - **Automated Private Airport DNS Sniffing**: Preserves the full private DNS sniffing algorithm, automatically inheriting original subscription hosts to guarantee dedicated transit/IPLC airports connect directly to high-speed BGP entries without degrading to slow fallback IPs.
 - **Robust Anti-DNS-Leak Architecture**:
   - Dual-stack Fake-IP virtual address pool with 0ms local response times, physically eliminating DNS leaks and ISP censorship;
@@ -40,8 +40,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Policy Topology Overview
 
 ```text
-  默认代理 (Master proxy, includes all valid nodes, pure manual selection)
-  漏网之鱼 (Unmatched fallback group, follows 默认代理 by default)
+  默认代理 (Master proxy, contains all valid nodes, pure manual selection & final unmatched fallback)
   直连     (Local direct connection)
 ```
 

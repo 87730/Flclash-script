@@ -498,12 +498,6 @@ function main(config) {
     },
     {
       ...selectBaseOption,
-      name: '漏网之鱼',
-      proxies: ['默认代理', '直连'],
-      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png',
-    },
-    {
-      ...selectBaseOption,
       name: '直连',
       proxies: directProxies.map((p) => p.name),
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png',
@@ -517,7 +511,7 @@ function main(config) {
     'RULE-SET,geolocation-!cn,默认代理',
     'RULE-SET,cn_ip,直连',
     'RULE-SET,private_ip,直连',
-    'MATCH,漏网之鱼',
+    'MATCH,默认代理',
   ];
 
   const newConfig = {
