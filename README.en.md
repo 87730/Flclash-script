@@ -21,14 +21,14 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ## Key Features
 
-- **Ultra-Clean & Zero Redundancy**: Completely eliminates bloated regional sub-groups and unnecessary app-specific routing cards. The main UI features only 3 essential cards, eliminating endless scrolling.
+- **Ultra-Clean & Zero Redundancy**: Completely eliminates bloated regional sub-groups, app-specific routing, and auto-latency test groups. The UI features only 3 essential cards, eliminating endless scrolling and IP hopping.
 - **Pure Three-Stage Routing**: LAN direct -> Block foreign QUIC (UDP 443) -> China domains & IPs direct -> All foreign traffic proxied via master control (China traffic direct, foreign traffic proxied).
 - **Automated Private Airport DNS Sniffing**: Preserves the full private DNS sniffing algorithm, automatically inheriting original subscription hosts to guarantee dedicated transit/IPLC airports connect directly to high-speed BGP entries without degrading to slow fallback IPs.
 - **Robust Anti-DNS-Leak Architecture**:
   - Dual-stack Fake-IP virtual address pool with 0ms local response times, physically eliminating DNS leaks and ISP censorship;
   - Overseas domains are securely resolved via remote Cloudflare/Google DoH over encrypted proxy tunnels;
   - Domestic domains are resolved directly via Alibaba/Tencent DNS for optimal local CDN speeds.
-- **Built-in Pure Auto-Selection**: Features an emoji-free `自动选择` (Auto-Select) option at the top of the master proxy node list. Driven by `lazy: true` on-demand latency tests, it remains completely dormant with zero background packets unless explicitly selected.
+- **100% Manual Selection · Zero IP Hopping**: Master proxy list contains only valid airport nodes chosen strictly by you. Zero background ping packets, completely preventing unexpected IP changes and account security flags.
 - **FlClash Mobile Energy Optimizations**:
   - Latency testing endpoint standardized to a zero-byte interface (`https://cp.cloudflare.com/generate_204`) for zero data wastage;
   - Disabled extraneous system process scanning (`find-process-mode: off`) to noticeably curb battery drain and device heat;
@@ -40,7 +40,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Policy Topology Overview
 
 ```text
-  默认代理 (Master proxy, includes all valid nodes with "自动选择" at the top)
+  默认代理 (Master proxy, includes all valid nodes, pure manual selection)
   漏网之鱼 (Unmatched fallback group, follows 默认代理 by default)
   直连     (Local direct connection)
 ```
