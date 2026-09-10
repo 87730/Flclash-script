@@ -1,10 +1,16 @@
 /**
- * mihomo / Clash 极简自适应覆写脚本 (Flclash 安卓极简版)
+ * mihomo / Clash 极简自适应覆写脚本 (Flclash 安卓极简完美版)
  * 仓库地址：https://github.com/87730/Flclash-script
  *
  * 核心设计：
  * 1. 【真·极简配置】：无任何花里胡哨的地区组与应用分流组，界面仅保留【默认代理】、【漏网之鱼】、【直连】3 个卡片。
- * 2. 【国内走国内，国外走国外】：纯粹可靠的三段式分流（内网直连 -> 国内域名/IP直连 -> 国外全部走代理）。
+ * 2. 【国内走国内，国外走国外】：闭环三段式分流规则：
+ *    - 内网/局域网 -> 直连
+ *    - 屏蔽国外 QUIC (UDP 443) -> 强制降级 TCP，防油管/网页断流卡顿
+ *    - 国内域名 (geolocation-cn) -> 直连
+ *    - 国外域名 (geolocation-!cn) -> 毫秒级命中【默认代理】，免除多余 DNS 反查
+ *    - 国内 IP (cn_ip) -> 直连
+ *    - 其余未知流量 (MATCH) -> 走【漏网之鱼】
  * 3. 【专线机场自适应与防透传】：100% 完整保留原作者私有 DNS 嗅探算法体系，自动继承原订阅 hosts，保证专线/中转连入 BGP 入口，绝不降级为慢速透传 IP。
  * 4. 【严密防 DNS 泄露】：Fake-IP 双栈虚拟地址池 + 国外域名走节点远端 DoH 解析 + 国内走阿里/腾讯直连解析。
  * 5. 【Android Flclash 优化】：移除桌面端系统参数，关闭无意义的后台进程扫描，轻量、节能、省电。
@@ -80,6 +86,12 @@ const ruleProviders = {
     url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/geolocation-cn.mrs',
     path: './ruleset/geolocation-cn.mrs',
     'path-in-bundle': 'geo/geosite/geolocation-cn.mrs',
+  },
+  'geolocation-!cn': {
+    ...ruleProviderCommonDomain,
+    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/geolocation-!cn.mrs',
+    path: './ruleset/geolocation-!cn.mrs',
+    'path-in-bundle': 'geo/geosite/geolocation-!cn.mrs',
   },
   cn_ip: {
     ...ruleProviderCommonIpcidr,
@@ -557,7 +569,8 @@ function main(config) {
     },
   ];
 
-  // 4. 构建三段式极简规则：内网直连 -> QUIC拦截 -> 国内直连 -> 兜底代理
+  // 4. 构建三段式极简规则：
+  // 内网直连 -> QUIC拦截 -> 国内域名直连 -> 国外域名代理(毫秒命中) -> 国内IP直连 -> 兜底代理
   const rules = [
     // 内网直连
     'RULE-SET,private,直连',
@@ -565,8 +578,13 @@ function main(config) {
     // 屏蔽国外 QUIC（带 no-resolve 与 cn_additional，防止误触发解析与断流）
     ...blockForeignQuic,
 
-    // 国内直连 (域名 + IP)
+    // 国内域名直连
     'RULE-SET,geolocation-cn,直连',
+
+    // 国外域名快速命中默认代理（避免穿透到底层触发多余 DNS 解析延迟）
+    'RULE-SET,geolocation-!cn,默认代理',
+
+    // 国内 IP 直连
     'RULE-SET,cn_ip,直连',
     'RULE-SET,private_ip,直连',
 
