@@ -17,12 +17,6 @@ FlClash 与 Mihomo (Clash Meta) 极致纯净·极简防泄漏配置覆写脚本�
 https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ```
 
-或者：
-
-```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoScript.js
-```
-
 ---
 
 ## 核心特性
