@@ -462,11 +462,29 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 function main(config) {
   const originalProxies = config.proxies || [];
 
-  const filteredProxies = originalProxies.filter((proxy) => {
+  const rawFiltered = originalProxies.filter((proxy) => {
     const type = String(proxy.type ?? '').toLowerCase();
     if (type === 'direct' || type === 'reject' || type === 'rematch') return false;
     return !excludeFilter.test(proxy.name);
   });
+
+  const uniqueNames = new Set();
+  const filteredProxies = [];
+  for (const proxy of rawFiltered) {
+    let name = proxy.name;
+    if (!uniqueNames.has(name)) {
+      uniqueNames.add(name);
+      filteredProxies.push(proxy);
+    } else {
+      let count = 2;
+      while (uniqueNames.has(`${name} ${count}`)) {
+        count++;
+      }
+      const newName = `${name} ${count}`;
+      uniqueNames.add(newName);
+      filteredProxies.push({ ...proxy, name: newName });
+    }
+  }
 
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
@@ -510,7 +528,12 @@ function main(config) {
     'log-level': 'info',
     'unified-delay': true,
     'tcp-concurrent': true,
+    'keep-alive-interval': 60,
     'find-process-mode': 'off',
+    profile: {
+      'store-selected': true,
+      'store-fake-ip': true,
+    },
     proxies: [...mappedProxies, ...directProxies],
     'proxy-groups': proxyGroups,
     'rule-providers': ruleProviders,
