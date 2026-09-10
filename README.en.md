@@ -17,12 +17,6 @@ Enter either of the following raw URLs into the script override settings in FlCl
 https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ```
 
-or:
-
-```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoScript.js
-```
-
 ---
 
 ## Key Features
