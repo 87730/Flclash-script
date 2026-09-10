@@ -489,11 +489,23 @@ function main(config) {
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
+  const autoGroup = {
+    type: 'url-test',
+    name: '自动选择',
+    url: 'https://cp.cloudflare.com/generate_204',
+    interval: 300,
+    tolerance: 50,
+    lazy: true,
+    hidden: true,
+    proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
+    icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png',
+  };
+
   const proxyGroups = [
     {
       ...selectBaseOption,
       name: '默认代理',
-      proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
+      proxies: ['自动选择', ...(proxyNames.length > 0 ? proxyNames : ['DIRECT'])],
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
     },
     {
@@ -508,6 +520,7 @@ function main(config) {
       proxies: directProxies.map((p) => p.name),
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png',
     },
+    autoGroup,
   ];
 
   const rules = [
