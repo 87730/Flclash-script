@@ -1,6 +1,6 @@
 # Flclash-script
 
-A lightweight configuration override script tailored for FlClash and Mihomo (Clash Meta).
+A lightweight, ultra-clean, anti-leak configuration override script tailored for FlClash and Mihomo (Clash Meta).
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -9,9 +9,9 @@ A lightweight configuration override script tailored for FlClash and Mihomo (Cla
 
 ---
 
-## Raw Script URLs
+## Raw Script URL
 
-Enter either of the following raw URLs into the script override settings in FlClash, Clash Verge Rev, or Mihomo Party:
+Enter the following raw script URL into the configuration override settings in FlClash, Clash Verge Rev, or Mihomo Party:
 
 ```text
 https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
@@ -21,31 +21,28 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ## Key Features
 
-- **Automated Private Airport DNS Sniffing**: Automatically extracts private authentication DNS embedded by dedicated transit/IPLC airports (such as FlowerCloud, Sakura, etc.) and binds them directly to node domains, ensuring 100% access to high-speed BGP entry points without degradation to slow fallback IPs.
-- **Intelligent Hosts Inheritance**: Safely merges and preserves all existing hosts entries from your original subscription and local settings, preventing custom NAS, intranet, or node accelerated mappings from being erased.
-- **Deadlock-Free Anti-Leak DNS Architecture**:
-  - Employs a dual-stack Fake-IP address pool with 0ms response times, physically eliminating DNS leaks and censorship;
-  - Routes domestic domain queries directly via Alibaba/Tencent DNS, and overseas domain queries through encrypted Cloudflare/Google DoH proxy tunnels;
-  - Resolves node server domains independently through local direct resolution to permanently prevent startup deadlocks.
-- **5 Core Regions with Flag Emojis**: Neatly organizes nodes into the 5 primary regions (Hong Kong, Japan, United States, Singapore, Taiwan) with country flags, while gracefully grouping all other regions into an "Other Nodes" group.
-- **Streamlined Service Routing**: Removes bloated and seldom-used policy groups, focusing strictly on high-frequency services including YouTube, Google, AI (ChatGPT/Claude), Telegram, and TikTok for minimal memory usage and rapid subscription updating.
-- **FlClash Mobile Energy Optimization**:
-  - Upgraded to a zero-byte latency test endpoint (`https://cp.cloudflare.com/generate_204`) for millisecond response times with zero bandwidth waste;
-  - Disabled unnecessary system process scanning (`find-process-mode: off`) to noticeably reduce mobile battery consumption and heat;
-  - Removed extraneous external Web consoles and NTP polling, delegating port and routing mode controls fully to the native client GUI.
+- **Ultra-Clean & Zero Redundancy**: Completely eliminates bloated regional sub-groups and unnecessary app-specific routing cards. The main UI features only 3 essential cards, eliminating endless scrolling.
+- **Pure Three-Stage Routing**: LAN direct -> Block foreign QUIC (UDP 443) -> China domains & IPs direct -> All foreign traffic proxied via master control (China traffic direct, foreign traffic proxied).
+- **Automated Private Airport DNS Sniffing**: Preserves the full private DNS sniffing algorithm, automatically inheriting original subscription hosts to guarantee dedicated transit/IPLC airports connect directly to high-speed BGP entries without degrading to slow fallback IPs.
+- **Robust Anti-DNS-Leak Architecture**:
+  - Dual-stack Fake-IP virtual address pool with 0ms local response times, physically eliminating DNS leaks and ISP censorship;
+  - Overseas domains are securely resolved via remote Cloudflare/Google DoH over encrypted proxy tunnels;
+  - Domestic domains are resolved directly via Alibaba/Tencent DNS for optimal local CDN speeds.
+- **Built-in Pure Auto-Selection**: Features an emoji-free `自动选择` (Auto-Select) option at the top of the master proxy node list. Driven by `lazy: true` on-demand latency tests, it remains completely dormant with zero background packets unless explicitly selected.
+- **FlClash Mobile Energy Optimizations**:
+  - Latency testing endpoint standardized to a zero-byte interface (`https://cp.cloudflare.com/generate_204`) for zero data wastage;
+  - Disabled extraneous system process scanning (`find-process-mode: off`) to noticeably curb battery drain and device heat;
+  - Includes duplicate node name auto-numbering to prevent kernel initialization crashes;
+  - Persistent manual node selection memory (`store-selected: true`) and TCP connection keep-alive (`keep-alive-interval: 60`).
 
 ---
 
-## Policy Group Overview
+## Policy Topology Overview
 
 ```text
-  GLOBAL (Global fallback)
-  默认代理 (Master proxy control)
-  手动选择 / 自动选择 (Manual & Auto-test selection)
-  YouTube / Google / AI / Telegram / TikTok (Core service groups)
-  漏网之鱼 / 直连 (Direct & Unmatched fallback)
-  香港 / 日本 / 美国 / 新加坡 / 台湾省 (Core region groups)
-  其他节点 (Other regions fallback)
+  默认代理 (Master proxy, includes all valid nodes with "自动选择" at the top)
+  漏网之鱼 (Unmatched fallback group, follows 默认代理 by default)
+  直连     (Local direct connection)
 ```
 
 ---
