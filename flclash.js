@@ -1,13 +1,19 @@
 /**
- * FlClash & Mihomo 极简配置覆写脚本
+ * FlClash & Mihomo 极简配置覆写脚本 (工业级终极优化版)
  * https://github.com/87730/Flclash-script
+ *
+ * 核心架构：
+ * 1. 【极致纯净·双卡片】：仅保留【默认代理】与【直连】，全手动选择，不跳 IP，无滑动地狱。
+ * 2. 【纯血白名单·零误杀】：基于 MetaCubeX 官方纯大陆标准 cn.mrs，TikTok/海外字节等海外 App 100% 自然走代理。
+ * 3. 【轻量闭环】：精炼至 5 个核心规则集，删减 3.3 万条多余海外规则库与死代码，订阅秒拉、省电省内存。
+ * 4. 【专线防透传 & 0 泄露】：完整保留私有 DNS 自动嗅探算法与 Hosts 继承，保住花云 0.2 倍率广州专线入口；Fake-IP 远端加密解析防泄露。
  */
 
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
 const blockForeignQuic = [
-  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_additional),(RULE-SET,cn_ip,no-resolve)))))),REJECT',
+  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
 ];
 
 const directProxies = [
@@ -51,6 +57,7 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
+// 仅保留 5 个最核心的纯血规则集
 const ruleProviders = {
   private: {
     ...ruleProviderCommonDomain,
@@ -64,17 +71,11 @@ const ruleProviders = {
     path: './ruleset/private_ip.mrs',
     'path-in-bundle': 'geo/geoip/private.mrs',
   },
-  'geolocation-cn': {
+  cn: {
     ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/geolocation-cn.mrs',
-    path: './ruleset/geolocation-cn.mrs',
-    'path-in-bundle': 'geo/geosite/geolocation-cn.mrs',
-  },
-  'geolocation-!cn': {
-    ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/geolocation-!cn.mrs',
-    path: './ruleset/geolocation-!cn.mrs',
-    'path-in-bundle': 'geo/geosite/geolocation-!cn.mrs',
+    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/cn.mrs',
+    path: './ruleset/cn.mrs',
+    'path-in-bundle': 'geo/geosite/cn.mrs',
   },
   cn_ip: {
     ...ruleProviderCommonIpcidr,
@@ -87,18 +88,6 @@ const ruleProviders = {
     url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/fakeip-filter.mrs',
     path: './ruleset/fakeip-filter.mrs',
     'path-in-bundle': 'geo/geosite/fakeip-filter.mrs',
-  },
-  cn_additional: {
-    ...ruleProviderCommonDomain,
-    url: 'https://static-file-global.353355.xyz/rules/cn-additional-list.mrs',
-    path: './ruleset/cn-additional-list.mrs',
-    'path-in-bundle': 'geo/geosite/cn.mrs',
-  },
-  cn: {
-    ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/cn.mrs',
-    path: './ruleset/cn.mrs',
-    'path-in-bundle': 'geo/geosite/cn.mrs',
   },
 };
 
@@ -430,7 +419,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'fake-ip-filter': [
       'rule-set:private',
       'rule-set:fakeip_filter',
-      'rule-set:geolocation-cn',
+      'rule-set:cn',
       ...proxyFakeIpFilter,
     ],
     'proxy-server-nameserver': chinaDohDNS,
@@ -504,11 +493,11 @@ function main(config) {
     },
   ];
 
+  // 纯血白名单规则链：内网直连 -> QUIC拦截 -> 纯大陆服务直连 -> 大陆IP直连 -> 兜底全走代理
   const rules = [
     'RULE-SET,private,直连',
     ...blockForeignQuic,
-    'RULE-SET,geolocation-cn,直连',
-    'RULE-SET,geolocation-!cn,默认代理',
+    'RULE-SET,cn,直连',
     'RULE-SET,cn_ip,直连',
     'RULE-SET,private_ip,直连',
     'MATCH,默认代理',

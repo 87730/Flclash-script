@@ -1,6 +1,6 @@
 # Flclash-script
 
-A lightweight, ultra-clean, anti-leak configuration override script tailored for FlClash and Mihomo (Clash Meta).
+A lightweight, ultra-clean, anti-leak configuration override script tailored for FlClash and Mihomo (Clash Meta) - Production Grade.
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -22,7 +22,9 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Key Features
 
 - **Ultra-Clean & Just 2 Cards**: Completely eliminates regional groups, app routing, auto-latency tests, and redundant fallback cards. The main UI features strictly 2 cards: `默认代理` (Master Proxy) and `直连` (Direct).
-- **Pure Closed-Loop Routing**: LAN direct -> Block foreign QUIC (UDP 443) -> China domains & IPs direct -> All foreign traffic and final fallback routed through `默认代理` (China traffic direct, foreign traffic proxied).
+- **Pure-Blood Whitelist · Zero False Positives**: Based on MetaCubeX official Mainland China standard `cn.mrs`. Overseas apps like TikTok and overseas ByteDance CDNs naturally route through proxy with zero stutter and without hacky patches.
+- **Lightweight Closed-Loop · Instant Subscription**: Streamlined down to only 5 essential rule-sets, eliminating 33,000 redundant overseas rules and dead code for lightning-fast subscription updates and minimal RAM usage.
+- **Pure Closed-Loop Routing**: LAN direct -> Block foreign QUIC (UDP 443 with no-resolve) -> Mainland China services & IPs direct -> All other foreign traffic naturally falls back to `默认代理` (China traffic direct, foreign traffic proxied).
 - **Automated Private Airport DNS Sniffing**: Preserves the full private DNS sniffing algorithm, automatically inheriting original subscription hosts to guarantee dedicated transit/IPLC airports connect directly to high-speed BGP entries without degrading to slow fallback IPs.
 - **Robust Anti-DNS-Leak Architecture**:
   - Dual-stack Fake-IP virtual address pool with 0ms local response times, physically eliminating DNS leaks and ISP censorship;
@@ -40,8 +42,20 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Policy Topology Overview
 
 ```text
-  默认代理 (Master proxy, contains all valid nodes, pure manual selection & final unmatched fallback)
+  默认代理 (Master proxy, contains all valid nodes, pure manual selection & natural fallback)
   直连     (Local direct connection)
+```
+
+---
+
+## Rule Providers (Only 5 Essential Sets)
+
+```text
+  private.mrs        - Local / private domains
+  private_ip.mrs     - Local / private IPs
+  cn.mrs             - MetaCubeX official Mainland China service domains
+  cn_ip.mrs          - Mainland China IP ranges
+  fakeip_filter.mrs  - Fake-IP whitelist filter
 ```
 
 ---
