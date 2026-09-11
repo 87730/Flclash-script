@@ -1,6 +1,6 @@
 # Flclash-script
 
-A lightweight, ultra-clean, anti-leak configuration override script tailored for FlClash and Mihomo (Clash Meta) - Production Grade.
+Configuration override script for FlClash and Mihomo (Clash Meta).
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -11,7 +11,7 @@ A lightweight, ultra-clean, anti-leak configuration override script tailored for
 
 ## Raw Script URL
 
-Enter the following raw script URL into the configuration override settings in FlClash, Clash Verge Rev, or Mihomo Party:
+Enter the following URL into the script override settings in FlClash, Clash Verge Rev, or Mihomo Party:
 
 ```text
 https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
@@ -19,41 +19,33 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Key Features
+## Features
 
-- **Ultra-Clean & Just 2 Cards**: Completely eliminates regional groups, app routing, auto-latency tests, and redundant fallback cards. The main UI features strictly 2 cards: `默认代理` (Master Proxy) and `直连` (Direct).
-- **Pure-Blood Whitelist · Zero False Positives**: Based on MetaCubeX official Mainland China standard `cn.mrs`. Overseas apps like TikTok and overseas ByteDance CDNs naturally route through proxy with zero stutter and without hacky patches.
-- **Lightweight Closed-Loop · Instant Subscription**: Streamlined down to only 5 essential rule-sets, eliminating 33,000 redundant overseas rules and dead code for lightning-fast subscription updates and minimal RAM usage.
-- **Pure Closed-Loop Routing**: LAN direct -> Block foreign QUIC (UDP 443 with no-resolve) -> Mainland China services & IPs direct -> All other foreign traffic naturally falls back to `默认代理` (China traffic direct, foreign traffic proxied).
-- **Automated Private Airport DNS Sniffing**: Preserves the full private DNS sniffing algorithm, automatically inheriting original subscription hosts to guarantee dedicated transit/IPLC airports connect directly to high-speed BGP entries without degrading to slow fallback IPs.
-- **Robust Anti-DNS-Leak Architecture**:
-  - Dual-stack Fake-IP virtual address pool with 0ms local response times, physically eliminating DNS leaks and ISP censorship;
-  - Overseas domains are securely resolved via remote Cloudflare/Google DoH over encrypted proxy tunnels;
-  - Domestic domains are resolved directly via Alibaba/Tencent DNS for optimal local CDN speeds.
-- **100% Manual Selection · Zero IP Hopping**: Master proxy list contains only valid airport nodes chosen strictly by you. Zero background ping packets, completely preventing unexpected IP changes and account security flags.
-- **FlClash Mobile Energy Optimizations**:
-  - Latency testing endpoint standardized to a zero-byte interface (`https://cp.cloudflare.com/generate_204`) for zero data wastage;
-  - Disabled extraneous system process scanning (`find-process-mode: off`) to noticeably curb battery drain and device heat;
-  - Includes duplicate node name auto-numbering to prevent kernel initialization crashes;
-  - Persistent manual node selection memory (`store-selected: true`) and TCP connection keep-alive (`keep-alive-interval: 60`).
+- **Dual-Card Layout**: The main interface displays only two groups: `默认代理` (Master Proxy) and `直连` (Direct).
+- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services route directly, while overseas traffic forwards via `默认代理`.
+- **Lightweight Rule-sets**: Streamlined to essential rule-sets to improve update speeds and reduce memory consumption.
+- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance to ensure dedicated transit and IPLC entries resolve properly.
+- **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains.
+- **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
+- **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, and connection keep-alive.
 
 ---
 
-## Policy Topology Overview
+## Policy Topology
 
 ```text
-  默认代理 (Master proxy, contains all valid nodes, pure manual selection & natural fallback)
+  默认代理 (Contains all valid nodes, manual selection, foreign traffic fallback)
   直连     (Local direct connection)
 ```
 
 ---
 
-## Rule Providers (Only 5 Essential Sets)
+## Rule Providers
 
 ```text
   private.mrs        - Local / private domains
   private_ip.mrs     - Local / private IPs
-  cn.mrs             - MetaCubeX official Mainland China service domains
+  cn.mrs             - Mainland China service domains
   cn_ip.mrs          - Mainland China IP ranges
   fakeip_filter.mrs  - Fake-IP whitelist filter
 ```
