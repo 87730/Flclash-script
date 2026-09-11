@@ -1,12 +1,6 @@
 /**
- * FlClash & Mihomo 极简配置覆写脚本 (工业级终极优化版)
+ * FlClash & Mihomo 极简配置覆写脚本
  * https://github.com/87730/Flclash-script
- *
- * 核心架构：
- * 1. 【极致纯净·双卡片】：仅保留【默认代理】与【直连】，全手动选择，不跳 IP，无滑动地狱。
- * 2. 【纯血白名单·零误杀】：基于 MetaCubeX 官方纯大陆标准 cn.mrs，TikTok/海外字节等海外 App 100% 自然走代理。
- * 3. 【轻量闭环】：精炼至 5 个核心规则集，删减 3.3 万条多余海外规则库与死代码，订阅秒拉、省电省内存。
- * 4. 【专线防透传 & 0 泄露】：完整保留私有 DNS 自动嗅探算法与 Hosts 继承，保住花云 0.2 倍率广州专线入口；Fake-IP 远端加密解析防泄露。
  */
 
 const excludeFilter =
@@ -57,7 +51,6 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
-// 仅保留 5 个最核心的纯血规则集
 const ruleProviders = {
   private: {
     ...ruleProviderCommonDomain,
@@ -493,7 +486,6 @@ function main(config) {
     },
   ];
 
-  // 纯血白名单规则链：内网直连 -> QUIC拦截 -> 纯大陆服务直连 -> 大陆IP直连 -> 兜底全走代理
   const rules = [
     'RULE-SET,private,直连',
     ...blockForeignQuic,
