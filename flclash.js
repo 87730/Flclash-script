@@ -1,5 +1,5 @@
 /**
- * FlClash & Mihomo 极简配置覆写脚本 (已修复纯IP引导、QUIC拦截与嗅探)
+ * FlClash & Mihomo 极简配置覆写脚本
  * https://github.com/87730/Flclash-script
  */
 
@@ -197,7 +197,7 @@ function dnsHost(server) {
   return str.replace(/:\d+$/, '').toLowerCase();
 }
 
-// 纯 IP 引导 DNS，用于解析 DoH 等域名
+// 引导 DNS 必须是纯 IP，用于解析 DoH 等解析器自己的域名
 const bootstrapDNS = ['223.5.5.5', '119.29.29.29', '1.12.12.12'];
 
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
@@ -217,7 +217,7 @@ function asArray(value) {
   return [];
 }
 
-// hosts 里的黑洞目标只表示“屏蔽该域名”，不能当成节点地址下发
+// hosts 的 0.0.0.0 / 回环值是“屏蔽”语义，不能当节点地址
 function isBlackholeTarget(target) {
   const value = String(target).trim().toLowerCase();
   return value === '0.0.0.0' || value === '::' || value === '::0' || value === 'localhost' || /^127\./.test(value);
@@ -330,7 +330,6 @@ function applyHostsToProxies(proxies, hosts) {
     }
 
     if (!target) return proxy;
-    // 展开是无条件的，保持“hosts 说屏蔽”时不把节点一起指到黑洞
     if (isBlackholeTarget(target)) return proxy;
 
     const patched = {
