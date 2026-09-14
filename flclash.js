@@ -1,18 +1,17 @@
 /**
- * FlClash & Mihomo 极简配置覆写脚本  (fixed)
+ * FlClash & Mihomo 极简配置覆写脚本 (已修复纯IP引导、QUIC拦截与嗅探)
  * https://github.com/87730/Flclash-script
  */
 
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
-// [FIX] 组名 / 直连出站名 / 内核保留字，订阅节点不得占用，否则内核会直接拒绝加载
+// 组名 / 直连出站名 / 内核保留字，订阅节点不得占用
 const RESERVED_NAMES = new Set(['默认代理', '直连', 'DIRECT', 'REJECT', 'PASS', 'GLOBAL']);
 
-// [FIX] 原来放在第一条（RULE-SET,cn 之前）：no-resolve 下用域名/fake-ip 无法命中 cn_ip，
-// 实测连 www.baidu.com:443 都会被 REJECT。移到 CN 规则之后，只兜住真正的境外 QUIC。
+// 阻断海外 UDP 443（置于国内规则之后，强制回退 TCP 并防止误杀国内流量）
 const blockForeignQuic = [
-  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
+  'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT',
 ];
 
 const directProxies = [
@@ -136,12 +135,6 @@ const commonDnsList = [
   '2620:119:53::53',
 ];
 
-// [FIX] 原来把 47 个条目拼成一条无边界正则去 test 整串，私有解析器会被误杀：
-//   https://adguard.mydomain.net/dns-query  (含 adguard)
-//   https://smartdns.home.lan/dns-query     (含 smartdns)
-//   https://1.1.1.1.mydomain.net/dns-query  (含 1.1.1.1)
-// 全部被当成“公共 DNS”丢掉，订阅里想给节点用的私有解析器就失效了。
-// 改成先取出 host，再分两路判定：IP 精确相等 / 域名后缀匹配。
 const commonDnsDomains = [
   'alidns.com',
   'doh.pub',
@@ -169,7 +162,6 @@ const commonDnsDomains = [
   'apple.com',
 ];
 
-// 取 DNS 服务器串里的主机名：去 scheme / path / #tag / 端口 / IPv6 方括号
 function dnsHost(server) {
   const str = String(server)
     .trim()
@@ -178,28 +170,23 @@ function dnsHost(server) {
 
   const bracket = str.match(/^\[([^\]]+)\](?::\d+)?$/);
   if (bracket) return bracket[1].toLowerCase();
-  if ((str.match(/:/g) || []).length > 1) return str.toLowerCase(); // 裸 IPv6，没有端口
+  if ((str.match(/:/g) || []).length > 1) return str.toLowerCase();
 
   return str.replace(/:\d+$/, '').toLowerCase();
 }
 
+// 纯 IP 引导 DNS，用于解析 DoH 等域名
+const bootstrapDNS = ['223.5.5.5', '119.29.29.29', '1.12.12.12'];
+
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
-// [FIX] 原来只有两条 DoH，443 被 reset / 被墙时节点域名解析全灭，整条链路跟着挂。
-// batchExchange 是并发取最快，加明文兜底不增加正常路径的延迟。
 const chinaDohDNS = [
   'https://223.5.5.5/dns-query#DIRECT',
   'https://1.12.12.12/dns-query#DIRECT',
   '223.5.5.5#DIRECT',
 ];
-// [FIX] 去掉 'system'：FlClash 的 core 用 tags=with_gvisor 编译，且全程没有调用
-// UpdateSystemDNS，走的是读 /etc/resolv.conf 的分支；Android 上读不到就落到内核写死的
-// 114.114.114.114 + 8.8.8.8（明文 UDP）。直连域名解析于是变成“114 明文 vs 223 明文”的
-// 随机赛跑，答案质量不可控。要兜底就用明确的国内明文 + 一条 DoH。
 const directDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT', 'https://223.5.5.5/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理', 'https://dns.google/dns-query#默认代理'];
 
-// 手写配置里 dns.nameserver / proxy-server-nameserver 写成裸字符串并不罕见，
-// 直接 .filter / spread 会炸或展开成单个字符，这里统一归一化成数组。
 function asArray(value) {
   if (Array.isArray(value)) {
     return value.map((v) => String(v)).filter((v) => v.length > 0);
@@ -319,14 +306,10 @@ function applyHostsToProxies(proxies, hosts) {
     const patched = {
       ...proxy,
       server: target,
-      // [FIX] 已有 sni 时不要再写入旧入口域名作为 servername，避免客户端优先使用错误的 SNI。
       ...(!proxy.servername && !proxy.sni && { servername: server }),
       ...(!proxy.sni && { sni: server }),
     };
 
-    // [FIX] mihomo 的 vmess/vless/trojan 结构体里没有顶层 host 字段，写了会被静默忽略；
-    // ws 的 Host 头默认取 server 字段，所以 server 换成 IP 后 Host 头会跟着变成 IP，CDN 节点会挂。
-    // 要保留原域名必须写进对应的 *-opts。
     const network = String(proxy.network ?? '').toLowerCase();
 
     if (network === 'ws') {
@@ -372,7 +355,6 @@ function stripDnsSuffix(dns) {
 function isIpAddress(server) {
   if (typeof server !== 'string') return false;
   const value = server.trim();
-  // [FIX] 原来的 /^\d{1,3}(\.\d{1,3}){3}$/ 会把 999.999.999.999 也当成 IP
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) {
     return value.split('.').every((part) => Number(part) <= 255);
   }
@@ -411,8 +393,6 @@ function simplifyDomainPolicy(policy) {
       continue;
     }
 
-    // [FIX] 原来哪怕只有 cdn.front.com 一个域名，也会被合并成 +.front.com，
-    // 把策略放大到整个 front.com 的所有子域。只有同后缀下确有多个域名时才合并。
     const uniqueDomains = new Set(items.map((item) => item.domain));
     if (uniqueDomains.size < 2) {
       simplifiedPolicy[items[0].domain] = items[0].dns;
@@ -430,13 +410,8 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const proxyServerNameservers = asArray(originalDnsConfig['proxy-server-nameserver']);
   const listenValue = originalDnsConfig['listen'];
-
   const listenHost = typeof listenValue === 'string' ? dnsHost(listenValue) : '';
 
-  // [FIX] 回环 / fake-ip 段 / TUN 自身 DNS 都不是“别人的 DNS”。订阅在这些情况下
-  // 会把它们写成解析器：dns.listen 缺省、或 TUN 自带 DNS（FlClash 是 172.19.0.2）。
-  // 一旦被塞进 proxy-server-nameserver-policy，内核就是拿自己的 DNS 解析自己的节点域名：
-  // fake-ip 模式下节点会被解析成 198.18.x.x → 所有节点失联。
   const isLocalDns = (dns) => {
     const host = dnsHost(dns);
     if (!host) return false;
@@ -445,19 +420,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     return listenHost.length > 0 && host === listenHost;
   };
 
-  // [FIX] 原来是 `shouldRewriteByHosts ? applyHostsToProxies(...) : filteredProxies`，
-  // 而 shouldRewriteByHosts 要求「proxy-server-nameserver 恰好一条且与 listen 文本互相包含」。
-  // 这个条件太窄，而且根子上是错的：内核解析节点域名走的是 component/resolver 的
-  // LookupIPWithResolver，那里对「域名→域名」型 hosts 返回 ok=false（见 Hosts.Search 的
-  // isDomain 分支），也就是 hosts 的 CNAME 只在「客户端连接」和「内置 DNS 服务器」两条路径生效，
-  // 对「用外部 DoH/公共 DNS 解析节点域名」这条路径完全无效。
-  //
-  // 结果：订阅一旦不是「单条 proxy-server-nameserver 指向自己」的形态（两条 PSNS、没有 listen、
-  // 或覆写把 PSNS 换成公共 DoH），机场写在 hosts 里的「马甲域名 → 真入口域名」就不生效，
-  // 节点域名被公共 DNS 解析成透传 IP —— 能连上，但走的不是专线入口。
-  //
-  // 修法：只要 hosts 能匹配到节点 server，就无条件把映射展开（等价于提前做掉 CNAME）。
-  // 这样与 listen / PSNS 形态完全解耦，且能让下面的 fake-ip-filter 匹配到目标域名。
   const mappedProxies = applyHostsToProxies(filteredProxies, config.hosts);
 
   const proxyDomains = new Set(
@@ -467,10 +429,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       .filter((server) => !isIpAddress(server)),
   );
 
-  // [FIX] 原文是 `shouldRewriteByHosts ? [] : proxyServerNameservers`：走上 hosts 重写分支时，
-  // 订阅自带的 proxy-server-nameserver 会被整段丢掉。中转/专线机场的入口往往只有它们自己的
-  // 解析器才给得对，丢掉 = 静默掉到“透传 IP”。改成只剔除回环/本地项（真·自环），其余一律保留，
-  // 稍后写进 proxy-server-nameserver-policy。
   const privateProxyServerNameservers = proxyServerNameservers.filter((dns) => !isLocalDns(dns));
 
   const isCommonDns = (dns) => {
@@ -512,7 +470,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     }
   }
 
-  const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
+const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
   const proxyServerPolicy =
     proxyDomains.size === matchedPolicyDomains.length &&
     matchedPolicyDomains.every((domain) => proxyDomains.has(domain.toLowerCase()))
@@ -521,10 +479,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const originalFakeIpFilter = asArray(originalDnsConfig['fake-ip-filter']);
 
-  // [FIX] 原文只拿 proxyDomains（改写后的节点 server）去筛订阅的 fake-ip-filter。
-  // 但订阅里的排除项经常写的是 hosts 映射的「目标域名」（花云就是 +.apt-agent.org），
-  // 一旦 server 因故没被改写（历史逻辑里 PSNS 多条的形态），这条就被丢掉，
-  // 节点域名解析就会拿到 fake-ip 假地址。这里把 hosts 的域名型目标也算进来。
   const hostsDomainTargets = new Set();
   for (const value of Object.values(config.hosts || {})) {
     const list = Array.isArray(value) ? value : [value];
@@ -541,9 +495,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     return matchDomainPattern(p, fakeIpMatchDomains);
   });
 
-  // [FIX] 原文把 dns.ipv6 硬写成 true，会把订阅里明确关掉的 IPv6 重新打开：顶层 ipv6: false
-  // 的订阅仍会下发 fake AAAA（2001:2::/48），设备/VPN 没有 IPv6 时应用会先试 IPv6 再回落，
-  // 表现为"偶发解析/连接变慢"。改成跟随订阅（顶层 ipv6 > dns.ipv6 > false）。
   const ipv6Enabled =
     typeof config['ipv6'] === 'boolean' ? config['ipv6'] : originalDnsConfig['ipv6'] === true;
 
@@ -556,12 +507,12 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
     ...(ipv6Enabled && { 'fake-ip-range6': '2001:2::1/48' }),
-    'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', 'rule-set:cn', ...proxyFakeIpFilter],
+    'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', ...proxyFakeIpFilter],
     'proxy-server-nameserver': chinaDohDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
-    'default-nameserver': chinaDohDNS,
+    'default-nameserver': bootstrapDNS,
     nameserver: foreignDNS,
     'nameserver-policy': {
       'rule-set:cn': chinaDNS,
@@ -592,9 +543,6 @@ function main(config) {
     return !excludeFilter.test(String(proxy.name ?? ''));
   });
 
-  // [FIX] 去重时把脚本自己追加的直连节点名和组名一起算进去，
-  // 否则订阅里出现同名节点（或叫“直连”的节点）会让内核报
-  // "duplicate name" / "loop is detected in ProxyGroup" 直接拒绝加载。
   const uniqueNames = new Set(RESERVED_NAMES);
   const filteredProxies = [];
   for (const proxy of rawFiltered) {
@@ -613,12 +561,9 @@ function main(config) {
     }
   }
 
-  const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
+const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
-  // [FIX] 原文只看 config.proxies：订阅如果是 proxy-providers（Provider 党手撸配置的常态），
-  // proxyNames 为空 → '默认代理' 退化成一个只含 DIRECT 的组，机场节点一个都进不来，等于全直连。
-  // 这里把 provider 名字挂到组的 use 上。
   const providerNames = Object.keys(config['proxy-providers'] || {}).filter((name) => name.length > 0);
   const providerUse = providerNames.length > 0 ? { use: providerNames } : {};
 
@@ -651,6 +596,14 @@ function main(config) {
     ...config,
     dns,
     hosts,
+    sniffer: {
+      enable: true,
+      'parse-pure-ip': true,
+      sniff: {
+        TLS: { ports: [443, 8443] },
+        HTTP: { ports: [80, '8080-8880'], 'override-destination': true },
+      },
+    },
     mode: config['mode'] || 'rule',
     'log-level': 'info',
     'unified-delay': true,
