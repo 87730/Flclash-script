@@ -9,10 +9,14 @@ const excludeFilter =
 // 组名 / 直连出站名 / 内核保留字，订阅节点不得占用
 const RESERVED_NAMES = new Set(['默认代理', '直连', 'DIRECT', 'REJECT', 'PASS', 'GLOBAL']);
 
-// 阻断海外 UDP 443（置于国内规则之后，强制回退 TCP 并防止误杀国内流量）
-const blockForeignQuic = [
-  'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT',
-];
+// 是否屏蔽国外 QUIC（UDP 443）：置 false 则放行 QUIC 走代理
+// 好处：不依赖节点的 UDP 中继，避免“能打开但加载一半卡住”
+// 代价：个别 App 的 QUIC 首包会被丢弃，回落 TCP 前多等一下
+const BLOCK_FOREIGN_QUIC = true;
+
+const blockForeignQuic = BLOCK_FOREIGN_QUIC
+  ? ['AND,((NETWORK,UDP),(DST-PORT,443)),REJECT'] // 置于国内规则之后，命中国内的流量已被前面的规则接走
+  : [];
 
 const directProxies = [
   {
@@ -133,6 +137,24 @@ const commonDnsList = [
   '2620:fe::9',
   '2620:119:35::35',
   '2620:119:53::53',
+  '94.140.14.14',
+  '94.140.15.15',
+  '76.76.2.0',
+  '76.76.10.0',
+  '185.228.168.9',
+  '185.228.169.9',
+  '77.88.8.8',
+  '77.88.8.1',
+  '156.154.70.1',
+  '156.154.71.1',
+  '2a10:50c0::ad1:ff',
+  '2a10:50c0::ad2:ff',
+  '2a10:50c0::bad1:ff',
+  '2a10:50c0::bad2:ff',
+  '2a02:6b8::feed:0ff',
+  '2a02:6b8:0:1::feed:0ff',
+  '2610:a1:1018::1',
+  '2610:a1:1019::1',
 ];
 
 const commonDnsDomains = [
@@ -160,6 +182,10 @@ const commonDnsDomains = [
   'cleanbrowsing.org',
   'dns.apple.com',
   'apple.com',
+  'one.one.one.one',
+  'dns.cloudflare.com',
+  'mozilla.cloudflare-dns.com',
+  'doh.360.cn',
 ];
 
 function dnsHost(server) {
