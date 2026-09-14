@@ -658,7 +658,12 @@ function main(config) {
     rules,
   };
 
+  // 端口类字段一律交给客户端自己管：订阅里残留的 port/socks-port/redir-port
+  // 会和客户端自己的监听端口撞车（实测花云残留 port:7890，与 FlClash 默认端口冲突）
   delete newConfig['tun'];
+  delete newConfig['port'];
+  delete newConfig['socks-port'];
+  delete newConfig['redir-port'];
   delete newConfig['mixed-port'];
   delete newConfig['external-controller'];
   delete newConfig['external-ui'];
