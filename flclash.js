@@ -9,14 +9,10 @@ const excludeFilter =
 // 组名 / 直连出站名 / 内核保留字，订阅节点不得占用
 const RESERVED_NAMES = new Set(['默认代理', '直连', 'DIRECT', 'REJECT', 'PASS', 'GLOBAL']);
 
-// 是否屏蔽国外 QUIC（UDP 443）：置 false 则放行 QUIC 走代理
-// 好处：不依赖节点的 UDP 中继，避免“能打开但加载一半卡住”
-// 代价：个别 App 的 QUIC 首包会被丢弃，回落 TCP 前多等一下
-const BLOCK_FOREIGN_QUIC = true;
-
-const blockForeignQuic = BLOCK_FOREIGN_QUIC
-  ? ['AND,((NETWORK,UDP),(DST-PORT,443)),REJECT'] // 置于国内规则之后，命中国内的流量已被前面的规则接走
-  : [];
+// 阻断海外 UDP 443（置于国内规则之后，强制回退 TCP 并防止误杀国内流量）
+const blockForeignQuic = [
+  'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT',
+];
 
 const directProxies = [
   {
