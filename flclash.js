@@ -511,23 +511,9 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       ? simplifyDomainPolicy(matchedProxyPolicy)
       : matchedProxyPolicy;
 
-  const originalFakeIpFilter = asArray(originalDnsConfig['fake-ip-filter']);
-
-  const hostsDomainTargets = new Set();
-  for (const value of Object.values(config.hosts || {})) {
-    const list = Array.isArray(value) ? value : [value];
-    for (const item of list) {
-      if (typeof item === 'string' && item.length > 0 && !isIpAddress(item)) {
-        hostsDomainTargets.add(item.toLowerCase());
-      }
-    }
-  }
-
-  const fakeIpMatchDomains = new Set([...proxyDomains, ...hostsDomainTargets]);
-  const proxyFakeIpFilter = originalFakeIpFilter.filter((pattern) => {
-    const p = String(pattern);
-    return matchDomainPattern(p, fakeIpMatchDomains);
-  });
+  // 订阅自带的 fake-ip-filter 全量保留：这些条目是机场在真实环境里踩出来的
+  // （内网发现、NTP 对时、STUN、国内流媒体 CDN、游戏平台），且不依赖规则集是否加载成功
+  const subscriptionFakeIpFilter = [...new Set(asArray(originalDnsConfig['fake-ip-filter']))];
 
   const ipv6Enabled =
     typeof config['ipv6'] === 'boolean' ? config['ipv6'] : originalDnsConfig['ipv6'] === true;
@@ -541,7 +527,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
     ...(ipv6Enabled && { 'fake-ip-range6': '2001:2::1/48' }),
-    'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', ...proxyFakeIpFilter],
+    'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', ...subscriptionFakeIpFilter],
     'proxy-server-nameserver': chinaDohDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
