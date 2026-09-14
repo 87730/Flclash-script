@@ -19,6 +19,17 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
+## 使用注意
+
+脚本生成的是完整的 DNS 分流设计，客户端里以下设置会把它覆盖掉，请保持关闭：
+
+- **关闭 FlClash 的「覆写DNS」**：开启后客户端会用自己的 `nameserver` / `proxy-server-nameserver` / `fake-ip-filter` 覆盖脚本生成的 DNS 配置，中转/专线节点域名将退回公共 DNS 解析。
+- **关闭「追加系统DNS」**：开启后会向 `nameserver` 追加 `system://`，在 Android 上会落到内核内置的 `114.114.114.114 + 8.8.8.8`，与脚本配置的加密 DNS 并发抢答。
+- **不要启用客户端的自定义规则 / 策略组**：填写后会整体替换脚本生成的策略组与规则链。
+- **内核要求**：mihomo 1.19.x 及以上（脚本用到 `rule-set` 形式的 DNS 策略与 `proxy-server-nameserver-policy`，老内核会拒绝加载配置）。
+
+---
+
 ## 特性
 
 - **双卡片结构**：主界面仅保留 `默认代理` 与 `直连` 2 个策略组，简洁直观。

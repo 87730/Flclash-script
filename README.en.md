@@ -19,6 +19,17 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
+## Important Notes
+
+The script emits a complete DNS routing design. The following client settings override it — keep them disabled:
+
+- **Disable FlClash's "Override DNS"**: when enabled, the client overwrites the script's `nameserver` / `proxy-server-nameserver` / `fake-ip-filter` with its own values, and transit/IPLC node domains fall back to public DNS resolution.
+- **Disable "Append System DNS"**: it appends `system://` to `nameserver`, which on Android resolves to the kernel's built-in `114.114.114.114 + 8.8.8.8`, racing against the script's encrypted DNS.
+- **Do not use client-side custom rules / proxy groups**: they wholesale replace the generated groups and rule chain.
+- **Kernel requirement**: mihomo 1.19.x or newer (the script uses `rule-set` DNS policies and `proxy-server-nameserver-policy`; older kernels reject the config).
+
+---
+
 ## Features
 
 - **Dual-Card Layout**: The main interface displays only two groups: `默认代理` (Master Proxy) and `直连` (Direct).
