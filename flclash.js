@@ -1,11 +1,18 @@
 /**
- * FlClash & Mihomo 极简配置覆写脚本
+ * FlClash & Mihomo 极简配置覆写脚本  (fixed)
  * https://github.com/87730/Flclash-script
+ *
+ * 相对原版的改动见 CHANGES.md
  */
 
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
+// [FIX] 组名 / 直连出站名 / 内核保留字，订阅节点不得占用，否则内核会直接拒绝加载
+const RESERVED_NAMES = new Set(['默认代理', '直连', 'DIRECT', 'REJECT', 'PASS', 'GLOBAL']);
+
+// [FIX] 原来放在第一条（RULE-SET,cn 之前）：no-resolve 下用域名/fake-ip 无法命中 cn_ip，
+// 实测连 www.baidu.com:443 都会被 REJECT。移到 CN 规则之后，只兜住真正的境外 QUIC。
 const blockForeignQuic = [
   'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
 ];
@@ -36,6 +43,8 @@ const directProxies = [
     'ip-version': 'ipv6',
   },
 ];
+
+for (const p of directProxies) RESERVED_NAMES.add(p.name);
 
 const ruleProviderCommonDomain = {
   type: 'http',
@@ -239,6 +248,9 @@ function applyHostsToProxies(proxies, hosts) {
 
   const domainMap = new Map(domainEntries);
 
+  const hasHostHeader = (headers) =>
+    !!headers && Object.keys(headers).some((k) => k.toLowerCase() === 'host');
+
   return proxies.map((proxy) => {
     const server = proxy.server;
     if (typeof server !== 'string' || isIpAddress(server)) return proxy;
@@ -258,16 +270,40 @@ function applyHostsToProxies(proxies, hosts) {
 
     if (!target) return proxy;
 
-    return {
+    const patched = {
       ...proxy,
       server: target,
-      ...(!proxy.servername && { servername: server }),
+      // [FIX] 已有 sni 时不要再写入旧入口域名作为 servername，避免客户端优先使用错误的 SNI。
+      ...(!proxy.servername && !proxy.sni && { servername: server }),
       ...(!proxy.sni && { sni: server }),
-      ...(!proxy.host &&
-        ['ws', 'http', 'h2', 'grpc'].includes(proxy.network) && {
-          host: server,
-        }),
     };
+
+    // [FIX] mihomo 的 vmess/vless/trojan 结构体里没有顶层 host 字段，写了会被静默忽略；
+    // ws 的 Host 头默认取 server 字段，所以 server 换成 IP 后 Host 头会跟着变成 IP，CDN 节点会挂。
+    // 要保留原域名必须写进对应的 *-opts。
+    const network = String(proxy.network ?? '').toLowerCase();
+
+    if (network === 'ws') {
+      const wsOpts = { ...(proxy['ws-opts'] || {}) };
+      if (!hasHostHeader(wsOpts.headers)) {
+        wsOpts.headers = { ...(wsOpts.headers || {}), Host: server };
+      }
+      patched['ws-opts'] = wsOpts;
+    } else if (network === 'h2') {
+      const h2Opts = { ...(proxy['h2-opts'] || {}) };
+      if (!h2Opts.host || h2Opts.host.length === 0) {
+        h2Opts.host = [server];
+      }
+      patched['h2-opts'] = h2Opts;
+    } else if (network === 'http') {
+      const httpOpts = { ...(proxy['http-opts'] || {}) };
+      if (!hasHostHeader(httpOpts.headers)) {
+        httpOpts.headers = { ...(httpOpts.headers || {}), Host: [server] };
+      }
+      patched['http-opts'] = httpOpts;
+    }
+
+    return patched;
   });
 }
 
@@ -288,7 +324,13 @@ function stripDnsSuffix(dns) {
 }
 
 function isIpAddress(server) {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(server) || server.includes(':');
+  if (typeof server !== 'string') return false;
+  const value = server.trim();
+  // [FIX] 原来的 /^\d{1,3}(\.\d{1,3}){3}$/ 会把 999.999.999.999 也当成 IP
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) {
+    return value.split('.').every((part) => Number(part) <= 255);
+  }
+  return value.includes(':') && /^[0-9a-f:.]+$/i.test(value);
 }
 
 function simplifyDomainPolicy(policy) {
@@ -319,6 +361,14 @@ function simplifyDomainPolicy(policy) {
 
   for (const [key, items] of groups.entries()) {
     if (key.startsWith('keep:')) {
+      simplifiedPolicy[items[0].domain] = items[0].dns;
+      continue;
+    }
+
+    // [FIX] 原来哪怕只有 cdn.front.com 一个域名，也会被合并成 +.front.com，
+    // 把策略放大到整个 front.com 的所有子域。只有同后缀下确有多个域名时才合并。
+    const uniqueDomains = new Set(items.map((item) => item.domain));
+    if (uniqueDomains.size < 2) {
       simplifiedPolicy[items[0].domain] = items[0].dns;
       continue;
     }
@@ -409,12 +459,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
     'fake-ip-range6': '2001:2::1/48',
-    'fake-ip-filter': [
-      'rule-set:private',
-      'rule-set:fakeip_filter',
-      'rule-set:cn',
-      ...proxyFakeIpFilter,
-    ],
+    'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', 'rule-set:cn', ...proxyFakeIpFilter],
     'proxy-server-nameserver': chinaDohDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
@@ -447,10 +492,13 @@ function main(config) {
   const rawFiltered = originalProxies.filter((proxy) => {
     const type = String(proxy.type ?? '').toLowerCase();
     if (type === 'direct' || type === 'reject' || type === 'rematch') return false;
-    return !excludeFilter.test(proxy.name);
+    return !excludeFilter.test(String(proxy.name ?? ''));
   });
 
-  const uniqueNames = new Set();
+  // [FIX] 去重时把脚本自己追加的直连节点名和组名一起算进去，
+  // 否则订阅里出现同名节点（或叫“直连”的节点）会让内核报
+  // "duplicate name" / "loop is detected in ProxyGroup" 直接拒绝加载。
+  const uniqueNames = new Set(RESERVED_NAMES);
   const filteredProxies = [];
   for (const proxy of rawFiltered) {
     let name = proxy.name;
@@ -488,10 +536,10 @@ function main(config) {
 
   const rules = [
     'RULE-SET,private,直连',
-    ...blockForeignQuic,
     'RULE-SET,cn,直连',
     'RULE-SET,cn_ip,直连',
     'RULE-SET,private_ip,直连',
+    ...blockForeignQuic,
     'MATCH,默认代理',
   ];
 
