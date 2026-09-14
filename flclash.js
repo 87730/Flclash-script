@@ -387,7 +387,8 @@ function stripDnsSuffix(dns) {
 
 function isIpAddress(server) {
   if (typeof server !== 'string') return false;
-  const value = server.trim();
+  // 先剥掉 IPv6 的方括号（可带端口），否则 [2400:3200::1] 会被当成域名
+  const value = server.trim().replace(/^\[([^\]]+)\](?::\d+)?$/, '$1');
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) {
     return value.split('.').every((part) => Number(part) <= 255);
   }
