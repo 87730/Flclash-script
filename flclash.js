@@ -564,12 +564,17 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 }
 
 function main(config) {
-  const originalProxies = config.proxies || [];
+  const originalProxies = Array.isArray(config.proxies) ? config.proxies : [];
 
   const rawFiltered = originalProxies.filter((proxy) => {
-    const type = String(proxy.type ?? '').toLowerCase();
+    // 订阅里出现 null / 字符串 / 缺 name、type 的条目时，与其产出一份内核拒收的配置，不如丢掉
+    if (!proxy || typeof proxy !== 'object') return false;
+    if (typeof proxy.name !== 'string' || proxy.name.length === 0) return false;
+    if (typeof proxy.type !== 'string' || proxy.type.length === 0) return false;
+
+    const type = proxy.type.toLowerCase();
     if (type === 'direct' || type === 'reject' || type === 'rematch') return false;
-    return !excludeFilter.test(String(proxy.name ?? ''));
+    return !excludeFilter.test(proxy.name);
   });
 
   const uniqueNames = new Set(RESERVED_NAMES);
@@ -593,7 +598,11 @@ function main(config) {
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
-  const providerNames = Object.keys(config['proxy-providers'] || {}).filter((name) => name.length > 0);
+  const providers = config['proxy-providers'];
+  const providerNames =
+    providers && typeof providers === 'object' && !Array.isArray(providers)
+      ? Object.keys(providers).filter((name) => name.length > 0)
+      : [];
   const providerUse = providerNames.length > 0 ? { use: providerNames } : {};
 
   const proxyGroups = [
