@@ -1,8 +1,6 @@
 /**
  * FlClash & Mihomo 极简配置覆写脚本  (fixed)
  * https://github.com/87730/Flclash-script
- *
- * 相对原版的改动见 CHANGES.md
  */
 
 const excludeFilter =
