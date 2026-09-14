@@ -217,6 +217,10 @@ function asArray(value) {
   return [];
 }
 
+// rcode:// / dhcp:// / ts:// 这些不是真正的 DNS 服务器，不能拿去解析节点域名
+const specialDnsSchemes = ['rcode://', 'dhcp://', 'ts://', 'tailscale://'];
+const isSpecialDns = (dns) => specialDnsSchemes.some((scheme) => String(dns).trim().toLowerCase().startsWith(scheme));
+
 // hosts 的 0.0.0.0 / 回环值是“屏蔽”语义，不能当节点地址
 function isBlackholeTarget(target) {
   const value = String(target).trim().toLowerCase();
@@ -475,7 +479,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     ...new Set(
       [...asArray(originalDnsConfig['nameserver']), ...privateProxyServerNameservers]
         .map(stripDnsSuffix)
-        .filter((dns) => dns.length > 0 && !isCommonDns(dns) && !isLocalDns(dns)),
+        .filter((dns) => dns.length > 0 && !isCommonDns(dns) && !isLocalDns(dns) && !isSpecialDns(dns)),
     ),
   ];
 
