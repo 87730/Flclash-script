@@ -195,6 +195,12 @@ function asArray(value) {
   return [];
 }
 
+// hosts 里的黑洞目标只表示“屏蔽该域名”，不能当成节点地址下发
+function isBlackholeTarget(target) {
+  const value = String(target).trim().toLowerCase();
+  return value === '0.0.0.0' || value === '::' || value === '::0' || value === 'localhost' || /^127\./.test(value);
+}
+
 function hostSpecificity(pattern) {
   if (pattern.startsWith('+.')) return 2;
   if (pattern.startsWith('.')) return 1;
@@ -302,6 +308,8 @@ function applyHostsToProxies(proxies, hosts) {
     }
 
     if (!target) return proxy;
+    // 展开是无条件的，保持“hosts 说屏蔽”时不把节点一起指到黑洞
+    if (isBlackholeTarget(target)) return proxy;
 
     const patched = {
       ...proxy,
@@ -470,7 +478,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     }
   }
 
-const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
+  const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
   const proxyServerPolicy =
     proxyDomains.size === matchedPolicyDomains.length &&
     matchedPolicyDomains.every((domain) => proxyDomains.has(domain.toLowerCase()))
@@ -561,7 +569,7 @@ function main(config) {
     }
   }
 
-const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
+  const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
   const providerNames = Object.keys(config['proxy-providers'] || {}).filter((name) => name.length > 0);

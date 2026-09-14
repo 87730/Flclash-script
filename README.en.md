@@ -28,7 +28,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **Resolver Safety Filter**: Loopback addresses, the Fake-IP range, and the built-in DNS listener address never end up in node resolution policies, preventing kernel self-loops.
 - **Provider Support**: Subscriptions that ship nodes via `proxy-providers` are mounted into the `默认代理` group automatically.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains.
-- **Subscription-Aware IPv6**: `dns.ipv6` and the Fake-IP v6 range follow the subscription instead of forcing fake AAAA answers.
+- **Subscription-Aware IPv6**: `dns.ipv6` and the Fake-IP v6 range follow the subscription (off when unspecified) instead of forcing fake AAAA answers.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
 - **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, and connection keep-alive.
 
