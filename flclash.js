@@ -134,31 +134,79 @@ const commonDnsList = [
   '2620:fe::9',
   '2620:119:35::35',
   '2620:119:53::53',
-  'alidns',
-  'tencent',
-  'dnspod',
-  'baidu',
-  'onedns',
-  '360',
-  'cloudflare',
-  'google',
-  'quad9',
-  'opendns',
-  'nextdns',
-  'adguard',
-  'smartdns',
-  'cleanbrowsing',
-  'apple',
 ];
 
-const commonDnsRegex = new RegExp(
-  commonDnsList.map((dns) => dns.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
-  'i',
-);
+// [FIX] 原来把 47 个条目拼成一条无边界正则去 test 整串，私有解析器会被误杀：
+//   https://adguard.mydomain.net/dns-query  (含 adguard)
+//   https://smartdns.home.lan/dns-query     (含 smartdns)
+//   https://1.1.1.1.mydomain.net/dns-query  (含 1.1.1.1)
+// 全部被当成“公共 DNS”丢掉，订阅里想给节点用的私有解析器就失效了。
+// 改成先取出 host，再分两路判定：IP 精确相等 / 域名后缀匹配。
+const commonDnsDomains = [
+  'alidns.com',
+  'doh.pub',
+  'dns.pub',
+  'dot.pub',
+  'dnspod.cn',
+  'dnspod.com',
+  'dns.360.cn',
+  'dns.baidu.com',
+  'onedns.net',
+  '114dns.com',
+  'cloudflare-dns.com',
+  'cloudflare.com',
+  'dns.google',
+  'google.com',
+  'googleapis.com',
+  'dns.quad9.net',
+  'quad9.net',
+  'opendns.com',
+  'nextdns.io',
+  'adguard-dns.com',
+  'adguard-dns.io',
+  'cleanbrowsing.org',
+  'dns.apple.com',
+  'apple.com',
+];
+
+// 取 DNS 服务器串里的主机名：去 scheme / path / #tag / 端口 / IPv6 方括号
+function dnsHost(server) {
+  const str = String(server)
+    .trim()
+    .replace(/^[a-z0-9+.-]+:\/\//i, '')
+    .split(/[/?#]/)[0];
+
+  const bracket = str.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracket) return bracket[1].toLowerCase();
+  if ((str.match(/:/g) || []).length > 1) return str.toLowerCase(); // 裸 IPv6，没有端口
+
+  return str.replace(/:\d+$/, '').toLowerCase();
+}
 
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
-const chinaDohDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
+// [FIX] 原来只有两条 DoH，443 被 reset / 被墙时节点域名解析全灭，整条链路跟着挂。
+// batchExchange 是并发取最快，加明文兜底不增加正常路径的延迟。
+const chinaDohDNS = [
+  'https://223.5.5.5/dns-query#DIRECT',
+  'https://1.12.12.12/dns-query#DIRECT',
+  '223.5.5.5#DIRECT',
+];
+// [FIX] 去掉 'system'：FlClash 的 core 用 tags=with_gvisor 编译，且全程没有调用
+// UpdateSystemDNS，走的是读 /etc/resolv.conf 的分支；Android 上读不到就落到内核写死的
+// 114.114.114.114 + 8.8.8.8（明文 UDP）。直连域名解析于是变成“114 明文 vs 223 明文”的
+// 随机赛跑，答案质量不可控。要兜底就用明确的国内明文 + 一条 DoH。
+const directDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT', 'https://223.5.5.5/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理', 'https://dns.google/dns-query#默认代理'];
+
+// 手写配置里 dns.nameserver / proxy-server-nameserver 写成裸字符串并不罕见，
+// 直接 .filter / spread 会炸或展开成单个字符，这里统一归一化成数组。
+function asArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v)).filter((v) => v.length > 0);
+  }
+  if (typeof value === 'string' || typeof value === 'number') return [String(value)];
+  return [];
+}
 
 function hostSpecificity(pattern) {
   if (pattern.startsWith('+.')) return 2;
@@ -380,18 +428,37 @@ function simplifyDomainPolicy(policy) {
 function buildDnsAndHostsConfig(config, filteredProxies) {
   const originalDnsConfig = config.dns || {};
 
-  const proxyServerNameservers = originalDnsConfig['proxy-server-nameserver'] || [];
+  const proxyServerNameservers = asArray(originalDnsConfig['proxy-server-nameserver']);
   const listenValue = originalDnsConfig['listen'];
 
-  const shouldRewriteByHosts =
-    proxyServerNameservers.length === 1 &&
-    typeof listenValue === 'string' &&
-    listenValue.length > 0 &&
-    (proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes(listenValue.toLowerCase())) ||
-      (listenValue.includes('0.0.0.0') &&
-        proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes('127.0.0.1'))));
+  const listenHost = typeof listenValue === 'string' ? dnsHost(listenValue) : '';
 
-  const mappedProxies = shouldRewriteByHosts ? applyHostsToProxies(filteredProxies, config.hosts) : filteredProxies;
+  // [FIX] 回环 / fake-ip 段 / TUN 自身 DNS 都不是“别人的 DNS”。订阅在这些情况下
+  // 会把它们写成解析器：dns.listen 缺省、或 TUN 自带 DNS（FlClash 是 172.19.0.2）。
+  // 一旦被塞进 proxy-server-nameserver-policy，内核就是拿自己的 DNS 解析自己的节点域名：
+  // fake-ip 模式下节点会被解析成 198.18.x.x → 所有节点失联。
+  const isLocalDns = (dns) => {
+    const host = dnsHost(dns);
+    if (!host) return false;
+    if (host === 'localhost' || host === '::1' || host === '172.19.0.2' || host === '198.18.0.2') return true;
+    if (/^127\./.test(host) || /^198\.18\./.test(host) || /^2001:2:/.test(host)) return true;
+    return listenHost.length > 0 && host === listenHost;
+  };
+
+  // [FIX] 原来是 `shouldRewriteByHosts ? applyHostsToProxies(...) : filteredProxies`，
+  // 而 shouldRewriteByHosts 要求「proxy-server-nameserver 恰好一条且与 listen 文本互相包含」。
+  // 这个条件太窄，而且根子上是错的：内核解析节点域名走的是 component/resolver 的
+  // LookupIPWithResolver，那里对「域名→域名」型 hosts 返回 ok=false（见 Hosts.Search 的
+  // isDomain 分支），也就是 hosts 的 CNAME 只在「客户端连接」和「内置 DNS 服务器」两条路径生效，
+  // 对「用外部 DoH/公共 DNS 解析节点域名」这条路径完全无效。
+  //
+  // 结果：订阅一旦不是「单条 proxy-server-nameserver 指向自己」的形态（两条 PSNS、没有 listen、
+  // 或覆写把 PSNS 换成公共 DoH），机场写在 hosts 里的「马甲域名 → 真入口域名」就不生效，
+  // 节点域名被公共 DNS 解析成透传 IP —— 能连上，但走的不是专线入口。
+  //
+  // 修法：只要 hosts 能匹配到节点 server，就无条件把映射展开（等价于提前做掉 CNAME）。
+  // 这样与 listen / PSNS 形态完全解耦，且能让下面的 fake-ip-filter 匹配到目标域名。
+  const mappedProxies = applyHostsToProxies(filteredProxies, config.hosts);
 
   const proxyDomains = new Set(
     mappedProxies
@@ -400,26 +467,36 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       .filter((server) => !isIpAddress(server)),
   );
 
-  const privateProxyServerNameservers = shouldRewriteByHosts ? [] : proxyServerNameservers;
+  // [FIX] 原文是 `shouldRewriteByHosts ? [] : proxyServerNameservers`：走上 hosts 重写分支时，
+  // 订阅自带的 proxy-server-nameserver 会被整段丢掉。中转/专线机场的入口往往只有它们自己的
+  // 解析器才给得对，丢掉 = 静默掉到“透传 IP”。改成只剔除回环/本地项（真·自环），其余一律保留，
+  // 稍后写进 proxy-server-nameserver-policy。
+  const privateProxyServerNameservers = proxyServerNameservers.filter((dns) => !isLocalDns(dns));
 
   const isCommonDns = (dns) => {
     const value = String(dns).trim().toLowerCase();
     if (value === 'system' || value === 'system://') return true;
-    return commonDnsRegex.test(value);
+
+    const host = dnsHost(value);
+    if (!host) return false;
+    if (isIpAddress(host)) return commonDnsList.includes(host);
+
+    return commonDnsDomains.some((domain) => host === domain || host.endsWith(`.${domain}`));
   };
 
   const privateDNS = [
     ...new Set(
-      [...(originalDnsConfig['nameserver'] || []), ...privateProxyServerNameservers]
+      [...asArray(originalDnsConfig['nameserver']), ...privateProxyServerNameservers]
         .map(stripDnsSuffix)
-        .filter((dns) => dns.length > 0 && !isCommonDns(dns)),
+        .filter((dns) => dns.length > 0 && !isCommonDns(dns) && !isLocalDns(dns)),
     ),
   ];
 
   const matchedProxyPolicy = {};
+  const policyOf = (value) => (value && typeof value === 'object' && !Array.isArray(value) ? value : {});
   for (const [domain, dns] of Object.entries({
-    ...originalDnsConfig['nameserver-policy'],
-    ...originalDnsConfig['proxy-server-nameserver-policy'],
+    ...policyOf(originalDnsConfig['nameserver-policy']),
+    ...policyOf(originalDnsConfig['proxy-server-nameserver-policy']),
   })) {
     if (!matchDomainPattern(domain, proxyDomains)) continue;
 
@@ -442,21 +519,43 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       ? simplifyDomainPolicy(matchedProxyPolicy)
       : matchedProxyPolicy;
 
-  const originalFakeIpFilter = originalDnsConfig['fake-ip-filter'] || [];
+  const originalFakeIpFilter = asArray(originalDnsConfig['fake-ip-filter']);
+
+  // [FIX] 原文只拿 proxyDomains（改写后的节点 server）去筛订阅的 fake-ip-filter。
+  // 但订阅里的排除项经常写的是 hosts 映射的「目标域名」（花云就是 +.apt-agent.org），
+  // 一旦 server 因故没被改写（历史逻辑里 PSNS 多条的形态），这条就被丢掉，
+  // 节点域名解析就会拿到 fake-ip 假地址。这里把 hosts 的域名型目标也算进来。
+  const hostsDomainTargets = new Set();
+  for (const value of Object.values(config.hosts || {})) {
+    const list = Array.isArray(value) ? value : [value];
+    for (const item of list) {
+      if (typeof item === 'string' && item.length > 0 && !isIpAddress(item)) {
+        hostsDomainTargets.add(item.toLowerCase());
+      }
+    }
+  }
+
+  const fakeIpMatchDomains = new Set([...proxyDomains, ...hostsDomainTargets]);
   const proxyFakeIpFilter = originalFakeIpFilter.filter((pattern) => {
     const p = String(pattern);
-    return matchDomainPattern(p, proxyDomains);
+    return matchDomainPattern(p, fakeIpMatchDomains);
   });
+
+  // [FIX] 原文把 dns.ipv6 硬写成 true，会把订阅里明确关掉的 IPv6 重新打开：顶层 ipv6: false
+  // 的订阅仍会下发 fake AAAA（2001:2::/48），设备/VPN 没有 IPv6 时应用会先试 IPv6 再回落，
+  // 表现为"偶发解析/连接变慢"。改成跟随订阅（顶层 ipv6 > dns.ipv6 > false）。
+  const ipv6Enabled =
+    typeof config['ipv6'] === 'boolean' ? config['ipv6'] : originalDnsConfig['ipv6'] === true;
 
   const dns = {
     enable: true,
-    ipv6: true,
+    ipv6: ipv6Enabled,
     'use-hosts': true,
     'cache-algorithm': 'arc',
     'use-system-hosts': true,
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
-    'fake-ip-range6': '2001:2::1/48',
+    ...(ipv6Enabled && { 'fake-ip-range6': '2001:2::1/48' }),
     'fake-ip-filter': ['rule-set:private', 'rule-set:fakeip_filter', 'rule-set:cn', ...proxyFakeIpFilter],
     'proxy-server-nameserver': chinaDohDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
@@ -467,7 +566,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'nameserver-policy': {
       'rule-set:cn': chinaDNS,
     },
-    'direct-nameserver': ['system', ...chinaDNS],
+    'direct-nameserver': directDNS,
   };
 
   const hosts = {
@@ -517,11 +616,18 @@ function main(config) {
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
+  // [FIX] 原文只看 config.proxies：订阅如果是 proxy-providers（Provider 党手撸配置的常态），
+  // proxyNames 为空 → '默认代理' 退化成一个只含 DIRECT 的组，机场节点一个都进不来，等于全直连。
+  // 这里把 provider 名字挂到组的 use 上。
+  const providerNames = Object.keys(config['proxy-providers'] || {}).filter((name) => name.length > 0);
+  const providerUse = providerNames.length > 0 ? { use: providerNames } : {};
+
   const proxyGroups = [
     {
       ...selectBaseOption,
+      ...providerUse,
       name: '默认代理',
-      proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
+      proxies: proxyNames.length > 0 ? proxyNames : providerNames.length > 0 ? [] : ['DIRECT'],
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
     },
     {

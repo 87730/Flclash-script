@@ -24,8 +24,11 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **Dual-Card Layout**: The main interface displays only two groups: `默认代理` (Master Proxy) and `直连` (Direct).
 - **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services route directly, while overseas traffic forwards via `默认代理`.
 - **Lightweight Rule-sets**: Streamlined to essential rule-sets to improve update speeds and reduce memory consumption.
-- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance to ensure dedicated transit and IPLC entries resolve properly.
+- **Transit Entry Fidelity**: Expands the subscription's `hosts` domain mappings (resolving the "alias domain → real entry" hop up front) and preserves the airport's private resolvers from `proxy-server-nameserver` / `nameserver-policy`, so transit and IPLC nodes are not resolved to pass-through IPs by public DNS.
+- **Resolver Safety Filter**: Loopback addresses, the Fake-IP range, and the built-in DNS listener address never end up in node resolution policies, preventing kernel self-loops.
+- **Provider Support**: Subscriptions that ship nodes via `proxy-providers` are mounted into the `默认代理` group automatically.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains.
+- **Subscription-Aware IPv6**: `dns.ipv6` and the Fake-IP v6 range follow the subscription instead of forcing fake AAAA answers.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
 - **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, and connection keep-alive.
 
