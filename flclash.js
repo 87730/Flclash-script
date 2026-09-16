@@ -119,7 +119,7 @@ const commonDnsRegex = new RegExp(
 
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
 const chinaDohDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
-const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理', 'https://dns.google/dns-query#默认代理'];
+const foreignDNS = ['https://cloudflare-dns.com/dns-query#节点选择', 'https://dns.google/dns-query#节点选择'];
 
 function hostSpecificity(pattern) {
   if (pattern.startsWith('+.')) return 2;
@@ -438,11 +438,11 @@ function main(config) {
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
-  // 策略组：仅保留唯一的【默认代理】，彻底移除直连卡片
+  // 策略组：仅保留唯一的【节点选择】，彻底移除直连卡片
   const proxyGroups = [
     {
       ...selectBaseOption,
-      name: '默认代理',
+      name: '节点选择',
       proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
     },
@@ -455,7 +455,7 @@ function main(config) {
     ...blockForeignQuic,
     'RULE-SET,cn,DIRECT',
     'RULE-SET,cn_ip,DIRECT',
-    'MATCH,默认代理',
+    'MATCH,节点选择',
   ];
 
   const newConfig = {

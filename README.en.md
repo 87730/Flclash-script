@@ -21,8 +21,8 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ## Features
 
-- **Single-Card Layout**: The main interface displays exclusively one core card: `默认代理` (Master Proxy), completely eliminating visual clutter.
-- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services and private networks route directly via native `DIRECT`, while overseas traffic forwards via `默认代理`.
+- **Single-Card Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter.
+- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services and private networks route directly via native `DIRECT`, while overseas traffic forwards via `节点选择`.
 - **Lightweight Rule-sets**: Streamlined to essential rule-sets to improve update speeds and reduce memory consumption.
 - **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance to ensure dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains.
@@ -34,7 +34,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Policy Topology
 
 ```text
-  默认代理 (Contains all valid nodes, manual selection, foreign traffic fallback)
+  节点选择 (Contains all valid nodes, manual selection, foreign traffic fallback)
   [Domestic services route directly via kernel native DIRECT without redundant cards]
 ```
 
