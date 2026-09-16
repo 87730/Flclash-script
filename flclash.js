@@ -88,7 +88,7 @@ const selectBaseOption = {
   type: 'select',
   interval: 600,
   timeout: 3000,
-  url: 'https://cp.cloudflare.com/generate_204',
+  url: 'http://connectivitycheck.platform.hicloud.com/generate_204',
   lazy: true,
   'max-failed-times': 3,
 };
