@@ -10,33 +10,6 @@ const blockForeignQuic = [
   'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
 ];
 
-const directProxies = [
-  {
-    name: '🇨🇳 直连 | 双栈',
-    type: 'direct',
-  },
-  {
-    name: '🇨🇳 直连 | IPv4优先',
-    type: 'direct',
-    'ip-version': 'ipv4-prefer',
-  },
-  {
-    name: '🇨🇳 直连 | IPv6优先',
-    type: 'direct',
-    'ip-version': 'ipv6-prefer',
-  },
-  {
-    name: '🇨🇳 直连 | 仅IPv4',
-    type: 'direct',
-    'ip-version': 'ipv4',
-  },
-  {
-    name: '🇨🇳 直连 | 仅IPv6',
-    type: 'direct',
-    'ip-version': 'ipv6',
-  },
-];
-
 const ruleProviderCommonDomain = {
   type: 'http',
   format: 'mrs',
@@ -88,7 +61,7 @@ const selectBaseOption = {
   type: 'select',
   interval: 600,
   timeout: 3000,
-  url: 'http://connectivitycheck.platform.hicloud.com/generate_204',
+  url: 'https://cp.cloudflare.com/generate_204',
   lazy: true,
   'max-failed-times': 3,
 };
@@ -470,6 +443,7 @@ function main(config) {
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
   const proxyNames = mappedProxies.map((p) => p.name);
 
+  // 策略组：仅保留唯一的【默认代理】，彻底移除直连卡片
   const proxyGroups = [
     {
       ...selectBaseOption,
@@ -477,20 +451,15 @@ function main(config) {
       proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
     },
-    {
-      ...selectBaseOption,
-      name: '直连',
-      proxies: directProxies.map((p) => p.name),
-      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png',
-    },
   ];
 
+  // 规则链：直接调用内核内置的原生 DIRECT 出站，零损耗、不依赖卡片
   const rules = [
-    'RULE-SET,private,直连',
-    'RULE-SET,private_ip,直连',
+    'RULE-SET,private,DIRECT',
+    'RULE-SET,private_ip,DIRECT',
     ...blockForeignQuic,
-    'RULE-SET,cn,直连',
-    'RULE-SET,cn_ip,直连',
+    'RULE-SET,cn,DIRECT',
+    'RULE-SET,cn_ip,DIRECT',
     'MATCH,默认代理',
   ];
 
@@ -508,7 +477,7 @@ function main(config) {
       'store-selected': true,
       'store-fake-ip': true,
     },
-    proxies: [...mappedProxies, ...directProxies],
+    proxies: [...mappedProxies],
     'proxy-groups': proxyGroups,
     'rule-providers': ruleProviders,
     rules,

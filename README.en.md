@@ -19,27 +19,13 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Important Notes
-
-The script emits a complete DNS routing design. The following client settings override it — keep them disabled:
-
-- **Disable FlClash's "Override DNS"**: when enabled, the client overwrites the script's `nameserver` / `proxy-server-nameserver` / `fake-ip-filter` with its own values, and transit/IPLC node domains fall back to public DNS resolution.
-- **Disable "Append System DNS"**: it appends `system://` to `nameserver`, which on Android resolves to the kernel's built-in `114.114.114.114 + 8.8.8.8`, racing against the script's encrypted DNS.
-- **Do not use client-side custom rules / proxy groups**: they wholesale replace the generated groups and rule chain.
-- **Kernel requirement**: mihomo 1.19.x or newer (the script uses `rule-set` DNS policies and `proxy-server-nameserver-policy`; older kernels reject the config).
-
----
-
 ## Features
 
-- **Dual-Card Layout**: The main interface displays only two groups: `默认代理` (Master Proxy) and `直连` (Direct).
-- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services route directly, while overseas traffic forwards via `默认代理`.
+- **Single-Card Layout**: The main interface displays exclusively one core card: `默认代理` (Master Proxy), completely eliminating visual clutter.
+- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services and private networks route directly via native `DIRECT`, while overseas traffic forwards via `默认代理`.
 - **Lightweight Rule-sets**: Streamlined to essential rule-sets to improve update speeds and reduce memory consumption.
-- **Transit Entry Fidelity**: Expands the subscription's `hosts` domain mappings (resolving the "alias domain → real entry" hop up front) and preserves the airport's private resolvers from `proxy-server-nameserver` / `nameserver-policy`, so transit and IPLC nodes are not resolved to pass-through IPs by public DNS.
-- **Resolver Safety Filter**: Loopback addresses, the Fake-IP range, and the built-in DNS listener address never end up in node resolution policies, preventing kernel self-loops.
-- **Provider Support**: Subscriptions that ship nodes via `proxy-providers` are mounted into the `默认代理` group automatically.
+- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance to ensure dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains.
-- **Subscription-Aware IPv6**: `dns.ipv6` and the Fake-IP v6 range follow the subscription (off when unspecified) instead of forcing fake AAAA answers.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
 - **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, and connection keep-alive.
 
@@ -49,7 +35,7 @@ The script emits a complete DNS routing design. The following client settings ov
 
 ```text
   默认代理 (Contains all valid nodes, manual selection, foreign traffic fallback)
-  直连     (Local direct connection)
+  [Domestic services route directly via kernel native DIRECT without redundant cards]
 ```
 
 ---
