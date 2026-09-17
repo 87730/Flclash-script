@@ -245,12 +245,12 @@ function stripDnsSuffix(dns) {
   if (hashIndex === -1) return str;
 
   const prefix = str.slice(0, hashIndex).trim();
-  const suffix = str
-    .slice(hashIndex + 1)
-    .toLowerCase()
-    .trim();
+  const rawTarget = str.slice(hashIndex + 1).trim();
 
-  if (suffix.includes('direct') || suffix.includes('直连')) return prefix + '#DIRECT';
+  // 严格只保留合法的有效策略引用（DIRECT 或当前主卡片 节点选择），
+  // 其余机场历史残留的失效组名一律安全剥除回落直连，防止内核报错
+  if (/^(direct|直连)$/i.test(rawTarget)) return prefix + '#DIRECT';
+  if (rawTarget === '节点选择') return prefix + '#节点选择';
 
   return prefix;
 }
@@ -448,23 +448,30 @@ function main(config) {
 
   const proxyNames = mappedProxies.map((p) => p.name);
 
+  // 兼容 proxy-providers 集合订阅：如果机场使用了集合订阅，主卡片加入 use 引用
+  const proxyProviders = config['proxy-providers'] || {};
+  const hasProviders = Object.keys(proxyProviders).length > 0;
+
   // 策略组：仅保留唯一的【节点选择】，彻底移除直连卡片
   const proxyGroups = [
     {
       ...selectBaseOption,
       name: '节点选择',
-      proxies: proxyNames.length > 0 ? proxyNames : ['DIRECT'],
+      proxies: proxyNames.length > 0 ? proxyNames : (hasProviders ? [] : ['DIRECT']),
+      ...(hasProviders && { use: Object.keys(proxyProviders) }),
       icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
     },
   ];
 
   // 规则链：直接调用内核内置的原生 DIRECT 出站，零损耗、不依赖卡片
   const rules = [
+    // 系统对时优先于所有业务分流直连，防止节点UDP阻断导致手机时间偏差
+    'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
     ...blockForeignQuic,
     'RULE-SET,cn,DIRECT',
-    'RULE-SET,cn_ip,DIRECT',
+    'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',
   ];
 
