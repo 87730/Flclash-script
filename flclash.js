@@ -354,6 +354,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const hosts = {
     ...(config.hosts || {}),
+    'doh.pub': ['1.12.12.12', '120.53.53.53'],
     'cloudflare-dns.com': ['1.1.1.1', '1.0.0.1'],
     'dns.google': ['8.8.8.8', '8.8.4.4'],
     'services.googleapis.cn': 'services.googleapis.com',
@@ -397,6 +398,9 @@ function main(config) {
 
   const fpTypes = ['trojan', 'vless', 'vmess'];
   for (const proxy of mappedProxies) {
+    if (!('ip-version' in proxy)) {
+      proxy['ip-version'] = 'dual';
+    }
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
       if (proxy.tls || proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';

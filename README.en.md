@@ -27,7 +27,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance with exact domain matching to prevent over-broad wildcards, ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with direct-nameserver-follow-policy enabled to prioritize clean direct resolution policies.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
-- **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, automatic Chrome uTLS fingerprint padding, NTP direct pass-through protection, and dual TCP keep-alive tuning.
+- **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, dual-stack Happy Eyeballs race connection, automatic Chrome uTLS fingerprint padding, doh.pub physical IP deadlock prevention, NTP direct pass-through protection, and dual TCP keep-alive tuning.
 
 ---
 
