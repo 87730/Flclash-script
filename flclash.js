@@ -136,7 +136,8 @@ function matchDomainPattern(pattern, domains) {
   const domainList = typeof domains === 'string' ? [domains.toLowerCase()] : [...domains].map((d) => d.toLowerCase());
 
   if (pattern.includes('*')) {
-    const regex = new RegExp(`^${pattern.replace(/\./g, '\\.').replace(/\*/g, '.*')}$`, 'i');
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    const regex = new RegExp(`^${escaped}$`, 'i');
     return domainList.some((d) => regex.test(d));
   }
 
@@ -252,45 +253,10 @@ function stripDnsSuffix(dns) {
 }
 
 function isIpAddress(server) {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(server) || server.includes(':');
-}
-
-function simplifyDomainPolicy(policy) {
-  const groups = new Map();
-
-  for (const [domain, dns] of Object.entries(policy)) {
-    const dnsKey = JSON.stringify(Array.isArray(dns) ? [...dns].sort() : dns);
-
-    if (domain.startsWith('+.') || domain.startsWith('.') || domain.includes('*')) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const parts = domain.split('.');
-    if (parts.length < 3) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const suffix = parts.slice(1).join('.');
-    const key = `${suffix}|${dnsKey}`;
-
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ domain, dns, dnsKey, suffix });
-  }
-
-  const simplifiedPolicy = {};
-
-  for (const [key, items] of groups.entries()) {
-    if (key.startsWith('keep:')) {
-      simplifiedPolicy[items[0].domain] = items[0].dns;
-      continue;
-    }
-
-    simplifiedPolicy[`+.${items[0].suffix}`] = items[0].dns;
-  }
-
-  return simplifiedPolicy;
+  return (
+    /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(server) ||
+    server.includes(':')
+  );
 }
 
 function buildDnsAndHostsConfig(config, filteredProxies) {
@@ -351,12 +317,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     }
   }
 
-  const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
-  const proxyServerPolicy =
-    proxyDomains.size === matchedPolicyDomains.length &&
-    matchedPolicyDomains.every((domain) => proxyDomains.has(domain.toLowerCase()))
-      ? simplifyDomainPolicy(matchedProxyPolicy)
-      : matchedProxyPolicy;
+  const proxyServerPolicy = matchedProxyPolicy;
 
   const originalFakeIpFilter = originalDnsConfig['fake-ip-filter'] || [];
   const proxyFakeIpFilter = originalFakeIpFilter.filter((pattern) => {
@@ -475,8 +436,8 @@ function main(config) {
     ...config,
     dns,
     hosts,
-    mode: config['mode'] || 'rule',
-    'log-level': 'info',
+    mode: 'rule',
+    'log-level': 'warning',
     'unified-delay': true,
     'tcp-concurrent': true,
     'keep-alive-idle': 300,

@@ -22,9 +22,9 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Features
 
 - **Single-Card Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter.
-- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset. Domestic services and private networks route directly via native `DIRECT`, while all overseas traffic (TCP / UDP / HTTP3 / WebRTC live streams) forwards smoothly via `节点选择`.
-- **Lightweight Rule-sets**: Streamlined to essential rule-sets to improve update speeds and reduce memory consumption.
-- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance to ensure dedicated transit and IPLC entries resolve properly.
+- **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset and locks `mode: rule`, routing domestic services directly via native `DIRECT`, while all overseas traffic (TCP / UDP / HTTP3 / WebRTC live streams) forwards smoothly via `节点选择`.
+- **Lightweight Rule-sets**: Streamlined to essential rule-sets and dead code removed to improve update speeds and reduce memory consumption.
+- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance with exact domain matching to prevent over-broad wildcards, ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with direct-nameserver-follow-policy enabled to prioritize clean direct resolution policies.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
 - **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, automatic Chrome uTLS fingerprint padding, NTP direct pass-through protection, and dual TCP keep-alive tuning.
