@@ -436,6 +436,16 @@ function main(config) {
   }
 
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
+
+  const fpTypes = ['trojan', 'vless', 'vmess'];
+  for (const proxy of mappedProxies) {
+    if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
+      if (proxy.tls || proxy['reality-opts']) {
+        proxy['client-fingerprint'] = 'chrome';
+      }
+    }
+  }
+
   const proxyNames = mappedProxies.map((p) => p.name);
 
   // 策略组：仅保留唯一的【节点选择】，彻底移除直连卡片
@@ -466,7 +476,8 @@ function main(config) {
     'log-level': 'info',
     'unified-delay': true,
     'tcp-concurrent': true,
-    'keep-alive-interval': 60,
+    'keep-alive-idle': 300,
+    'keep-alive-interval': 30,
     'find-process-mode': 'off',
     profile: {
       'store-selected': true,
