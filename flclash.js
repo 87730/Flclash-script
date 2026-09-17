@@ -392,6 +392,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       'rule-set:cn': chinaDNS,
     },
     'direct-nameserver': ['system', ...chinaDNS],
+    'direct-nameserver-follow-policy': true,
   };
 
   const hosts = {
