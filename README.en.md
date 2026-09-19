@@ -23,11 +23,12 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 - **Single-Card Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter.
 - **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset and locks `mode: rule`, routing domestic services directly via native `DIRECT`, while all overseas traffic (TCP / UDP / HTTP3 / WebRTC live streams) forwards smoothly via `节点选择`.
-- **Lightweight Rule-sets**: Streamlined to essential rule-sets and dead code removed to improve update speeds and reduce memory consumption.
-- **Dedicated Transit DNS Adaptation**: Retains private DNS sniffing and Hosts inheritance with exact domain matching to prevent over-broad wildcards, ensuring dedicated transit and IPLC entries resolve properly.
+- **Official Lightweight Rule-sets**: Uses authoritative upstream rule-sets from the official MetaCubeX repository (`meta-rules-dat`), ensuring rapid subscription loading and minimal memory footprint without third-party forks.
+- **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with direct-nameserver-follow-policy enabled to prioritize clean direct resolution policies.
+- **Cross-Platform Compatibility**: Intelligently preserves and adapts local `mixed-port: 7890` and external controller endpoints, ensuring seamless compatibility across mobile (FlClash) and desktop environments.
 - **Manual Node Selection**: The proxy list contains all valid nodes, allowing manual selection without unexpected IP changes.
-- **Mobile Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, dual-stack Happy Eyeballs race connection, automatic Chrome uTLS fingerprint padding, doh.pub physical IP deadlock prevention, NTP direct pass-through protection, and dual TCP keep-alive tuning.
+- **Mobile & Performance Optimizations**: Includes zero-byte latency test endpoints, disabled background process scanning, duplicate node name handling, dual-stack Happy Eyeballs race connection, automatic Chrome uTLS fingerprint padding, doh.pub physical IP deadlock prevention, NTP direct pass-through protection, and dual TCP keep-alive tuning.
 
 ---
 
@@ -40,13 +41,13 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Rule Providers
+## Rule Providers (MetaCubeX Official Upstream)
 
 ```text
   private.mrs        - Local / private domains
   private_ip.mrs     - Local / private IPs
-  cn.mrs             - Mainland China service domains
-  cn_ip.mrs          - Mainland China IP ranges
+  cn.mrs             - MetaCubeX official Mainland China service domains
+  cn_ip.mrs          - MetaCubeX official Mainland China IP ranges
   fakeip_filter.mrs  - Fake-IP whitelist filter
 ```
 

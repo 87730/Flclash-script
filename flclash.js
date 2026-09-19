@@ -20,30 +20,32 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
+const RS_BASE = 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo';
+
 const ruleProviders = {
   private: {
     ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/private.mrs',
+    url: `${RS_BASE}/geosite/private.mrs`,
     path: './ruleset/private.mrs',
   },
   private_ip: {
     ...ruleProviderCommonIpcidr,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geoip/private.mrs',
+    url: `${RS_BASE}/geoip/private.mrs`,
     path: './ruleset/private_ip.mrs',
   },
   cn: {
     ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/cn.mrs',
+    url: `${RS_BASE}/geosite/cn.mrs`,
     path: './ruleset/cn.mrs',
   },
   cn_ip: {
     ...ruleProviderCommonIpcidr,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geoip/cn.mrs',
+    url: `${RS_BASE}/geoip/cn.mrs`,
     path: './ruleset/cn_ip.mrs',
   },
   fakeip_filter: {
     ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/fakeip-filter.mrs',
+    url: 'https://testingcf.jsdelivr.net/gh/wwqgtxx/clash-rules@release/fakeip-filter.mrs',
     path: './ruleset/fakeip-filter.mrs',
   },
 };
@@ -244,8 +246,6 @@ function stripDnsSuffix(dns) {
   const prefix = str.slice(0, hashIndex).trim();
   const rawTarget = str.slice(hashIndex + 1).trim();
 
-  // 严格只保留合法的有效策略引用（DIRECT 或当前主卡片 节点选择），
-  // 其余机场历史残留的失效组名一律安全剥除回落直连，防止内核报错
   if (/^(direct|直连)$/i.test(rawTarget)) return prefix + '#DIRECT';
   if (rawTarget === '节点选择') return prefix + '#节点选择';
 
@@ -275,12 +275,16 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const mappedProxies = shouldRewriteByHosts ? applyHostsToProxies(filteredProxies, config.hosts) : filteredProxies;
 
-  const proxyDomains = new Set(
-    mappedProxies
+  const activeNodeServers = new Set([
+    ...filteredProxies
       .filter((proxy) => typeof proxy.server === 'string')
       .map((proxy) => proxy.server.toLowerCase())
       .filter((server) => !isIpAddress(server)),
-  );
+    ...mappedProxies
+      .filter((proxy) => typeof proxy.server === 'string')
+      .map((proxy) => proxy.server.toLowerCase())
+      .filter((server) => !isIpAddress(server)),
+  ]);
 
   const privateProxyServerNameservers = shouldRewriteByHosts ? [] : proxyServerNameservers;
 
@@ -303,7 +307,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     ...originalDnsConfig['nameserver-policy'],
     ...originalDnsConfig['proxy-server-nameserver-policy'],
   })) {
-    if (!matchDomainPattern(domain, proxyDomains)) continue;
+    if (!matchDomainPattern(domain, activeNodeServers)) continue;
 
     const stripedDns = Array.isArray(dns) ? dns.map(stripDnsSuffix).filter((d) => d.length > 0) : stripDnsSuffix(dns);
     if (Array.isArray(stripedDns) && stripedDns.length === 0) continue;
@@ -312,7 +316,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   }
 
   if (privateDNS.length > 0 && Object.keys(matchedProxyPolicy).length === 0) {
-    for (const domain of proxyDomains) {
+    for (const domain of activeNodeServers) {
       matchedProxyPolicy[domain] = privateDNS;
     }
   }
@@ -322,7 +326,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   const originalFakeIpFilter = originalDnsConfig['fake-ip-filter'] || [];
   const proxyFakeIpFilter = originalFakeIpFilter.filter((pattern) => {
     const p = String(pattern);
-    return matchDomainPattern(p, proxyDomains);
+    return matchDomainPattern(p, activeNodeServers);
   });
 
   const dns = {
@@ -352,8 +356,42 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'direct-nameserver-follow-policy': true,
   };
 
+  const targetHostDomains = new Set([
+    ...filteredProxies
+      .filter((proxy) => typeof proxy.server === 'string')
+      .map((proxy) => proxy.server.toLowerCase())
+      .filter((server) => !isIpAddress(server)),
+    ...activeNodeServers,
+  ]);
+  const extractResolvers = [
+    ...Object.values(matchedProxyPolicy).flat(),
+    ...Object.values(originalDnsConfig['proxy-server-nameserver-policy'] || {}).flat(),
+    ...privateProxyServerNameservers,
+  ];
+  extractResolvers.forEach((resolver) => {
+    const raw = String(resolver).trim();
+    let host = '';
+    const m = raw.match(/^(?:https?|tls|udp|tcp):\/\/([A-Za-z0-9.-]+)/i);
+    if (m) {
+      host = m[1];
+    } else if (!isIpAddress(raw)) {
+      host = raw;
+    }
+    if (host && !isIpAddress(host)) {
+      targetHostDomains.add(host.toLowerCase());
+    }
+  });
+
+  const rawHosts = config.hosts || {};
+  const projectedHosts = {};
+  for (const [hPattern, hValue] of Object.entries(rawHosts)) {
+    if (matchDomainPattern(hPattern, targetHostDomains)) {
+      projectedHosts[hPattern] = hValue;
+    }
+  }
+
   const hosts = {
-    ...(config.hosts || {}),
+    ...projectedHosts,
     'doh.pub': ['1.12.12.12', '120.53.53.53'],
     'cloudflare-dns.com': ['1.1.1.1', '1.0.0.1'],
     'dns.google': ['8.8.8.8', '8.8.4.4'],
@@ -410,11 +448,9 @@ function main(config) {
 
   const proxyNames = mappedProxies.map((p) => p.name);
 
-  // 兼容 proxy-providers 集合订阅：如果机场使用了集合订阅，主卡片加入 use 引用
   const proxyProviders = config['proxy-providers'] || {};
   const hasProviders = Object.keys(proxyProviders).length > 0;
 
-  // 策略组：仅保留唯一的【节点选择】，彻底移除直连卡片
   const proxyGroups = [
     {
       ...selectBaseOption,
@@ -425,9 +461,7 @@ function main(config) {
     },
   ];
 
-  // 规则链：直接调用内核内置的原生 DIRECT 出站，零损耗、不依赖卡片
   const rules = [
-    // 系统对时优先于所有业务分流直连，防止节点UDP阻断导致手机时间偏差
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
@@ -440,6 +474,7 @@ function main(config) {
     ...config,
     dns,
     hosts,
+    'mixed-port': config['mixed-port'] || 7890,
     mode: 'rule',
     'log-level': 'warning',
     'unified-delay': true,
@@ -457,9 +492,11 @@ function main(config) {
     rules,
   };
 
+  if (config['external-controller']) {
+    newConfig['external-controller'] = config['external-controller'];
+  }
+
   delete newConfig['tun'];
-  delete newConfig['mixed-port'];
-  delete newConfig['external-controller'];
   delete newConfig['external-ui'];
   delete newConfig['external-ui-url'];
 
