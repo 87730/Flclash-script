@@ -23,7 +23,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 - **单卡片极简结构**：主界面仅保留唯一的核心卡片 `节点选择`，去除多余策略卡片，告别滑动地狱。
 - **白名单分流**：采用 MetaCubeX 官方原厂直出标准 `cn.mrs`，强制锁定 `mode: rule` 规则分流模式，国内服务与局域网直接走内核原生 `DIRECT` 直连，国外全协议流量（TCP / UDP / HTTP3 / WebRTC 直播流）通过 `节点选择` 转发。
-- **官方轻量规则集**：规则集来源统一采用 MetaCubeX 官方仓库（`meta-rules-dat`），无第三方魔改，加载快速，内存占用低。
+- **轻量规则集**：规则集来源统一采用经过深度优化的 `bett-rules` 仓库，针对移动端网络环境调优，配合全球 CDN 加速，加载极速，内存占用低。
 - **专线 DNS 适配**：保留私有 DNS 自动嗅探算法，采用安全闭包投射与 Hosts 精确改写，杜绝全网域名泛化误伤，确保专线与中转节点入口正常解析。
 - **防 DNS 泄露**：启用 Fake-IP 地址池，国外域名通过加密通道进行远端代理解析，国内域名走直连解析，开启 direct-nameserver-follow-policy 优先遵从纯净直连解析策略。
 - **全平台客户端兼容**：智能保留并自适应补全本地 `mixed-port: 7890` 混合端口与外部控制器，手机端 FlClash 与电脑端各类客户端开箱即用。
@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## 规则集 (MetaCubeX 官方原厂源)
+## 规则集 (bett-rules 调优加速源)
 
 ```text
   private.mrs        - 内网与局域网域名

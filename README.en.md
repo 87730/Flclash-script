@@ -23,7 +23,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 - **Single-Card Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter.
 - **Whitelist Routing**: Uses the official MetaCubeX `cn.mrs` Mainland dataset and locks `mode: rule`, routing domestic services directly via native `DIRECT`, while all overseas traffic (TCP / UDP / HTTP3 / WebRTC live streams) forwards smoothly via `节点选择`.
-- **Official Lightweight Rule-sets**: Uses authoritative upstream rule-sets from the official MetaCubeX repository (`meta-rules-dat`), ensuring rapid subscription loading and minimal memory footprint without third-party forks.
+- **Lightweight Rule-sets**: Uses the optimized `bett-rules` repository tailored for mobile environments, leveraging global CDN acceleration for ultra-fast loading and minimal memory footprint.
 - **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with direct-nameserver-follow-policy enabled to prioritize clean direct resolution policies.
 - **Cross-Platform Compatibility**: Intelligently preserves and adapts local `mixed-port: 7890` and external controller endpoints, ensuring seamless compatibility across mobile (FlClash) and desktop environments.
@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Rule Providers (MetaCubeX Official Upstream)
+## Rule Providers (bett-rules Optimized Source)
 
 ```text
   private.mrs        - Local / private domains

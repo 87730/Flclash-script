@@ -20,7 +20,7 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
-const RS_BASE = 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo';
+const RS_BASE = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo';
 
 const ruleProviders = {
   private: {
@@ -45,7 +45,7 @@ const ruleProviders = {
   },
   fakeip_filter: {
     ...ruleProviderCommonDomain,
-    url: 'https://testingcf.jsdelivr.net/gh/wwqgtxx/clash-rules@release/fakeip-filter.mrs',
+    url: `${RS_BASE}/geosite/fakeip-filter.mrs`,
     path: './ruleset/fakeip-filter.mrs',
   },
 };
