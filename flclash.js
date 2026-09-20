@@ -499,6 +499,7 @@ function main(config) {
   delete newConfig['tun'];
   delete newConfig['external-ui'];
   delete newConfig['external-ui-url'];
+  delete newConfig['global-client-fingerprint'];
 
   return newConfig;
 }
