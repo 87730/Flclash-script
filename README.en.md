@@ -22,7 +22,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Features
 
 - **Single-Card Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter.
-- **Whitelist Routing**: Uses Mainland China standard `cn.mrs` dataset and locks `mode: rule`, routing domestic services directly via native `DIRECT`, while all overseas traffic (TCP / UDP / HTTP3 / WebRTC live streams) forwards smoothly via `节点选择`.
+- **Whitelist Routing**: Uses Mainland China standard `cn.mrs` dataset, blocks foreign QUIC traffic (with no-resolve to prevent leaks), locks `mode: rule`, routing domestic services directly via native `DIRECT`, while foreign traffic forwards smoothly via `节点选择`.
 - **Lightweight Rule-sets**: Uses the optimized `bett-rules` repository tailored for mobile environments, leveraging global CDN acceleration for ultra-fast loading and minimal memory footprint.
 - **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak**: Uses Fake-IP mode with remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with direct-nameserver-follow-policy enabled to prioritize clean direct resolution policies.

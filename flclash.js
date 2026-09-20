@@ -6,6 +6,11 @@
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
+// 屏蔽国外QUIC（UDP 443 -> REJECT，带 no-resolve 防泄漏）
+const blockForeignQuic = [
+  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
+];
+
 const ruleProviderCommonDomain = {
   type: 'http',
   format: 'mrs',
@@ -461,10 +466,12 @@ function main(config) {
     },
   ];
 
+  // 规则链：包含国外 QUIC 拦截测试
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
+    ...blockForeignQuic,
     'RULE-SET,cn,DIRECT',
     'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',
