@@ -29,7 +29,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **专线 Hosts 映射闭包**：保留私有 DNS 自动嗅探算法，采用安全闭包投射与 Hosts 精确改写，杜绝全网域名泛化误伤，确保专线与中转节点入口正常解析。
 - **严密防 DNS 泄露**：启用 Fake-IP 地址池（`198.18.0.1/15` 与 `2001:2::1/48` 跨平台高兼容防冲突网段），国外域名通过加密通道进行远端代理解析，国内域名走直连解析，开启 `direct-nameserver-follow-policy` 优先遵从纯净直连解析策略，引导 DNS 采用纯明文 IP 杜绝证书时钟死锁。
 - **客户端现场设置安全保底**：对本地 `mixed-port: 7890`、`mode: rule` 与 `log-level: warning` 采用无配置时安全保底赋值，绝不粗暴覆盖用户在 FlClash 或 Clash Verge 界面自定义的个性化端口、静默日志或分流偏好。
-- **性能与保活优化**：测速接口统一为 Google 原生轻量探针（`gstatic.com/generate_204`）并增加 `204` 状态码强校验（杜绝节点欠费跳转假通畅），关闭后台无意义进程扫描，加入节点重名自动编号容错、自动补全 Chrome 浏览器指纹、doh.pub 物理 IP 防死锁及科学 TCP 双保活调优。
+- **性能与保活优化**：测速接口统一为 Google 原生轻量探针（`gstatic.com/generate_204`）并增加 `204` 状态码强校验（杜绝节点欠费跳转假通畅），关闭后台无意义进程扫描，加入节点重名自适应序号防冲突、自动补全 Chrome 浏览器指纹、主流公共 DNS 物理 IP 防死锁闭环及科学 TCP 双保活调优。
 
 ---
 

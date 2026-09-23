@@ -143,7 +143,6 @@ const commonDnsRegex = new RegExp(
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
-const chinaDohDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#节点选择', 'https://dns.google/dns-query#节点选择'];
 
 function hostSpecificity(pattern) {
@@ -370,7 +369,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       'rule-set:fakeip_filter',
       ...proxyFakeIpFilter,
     ],
-    'proxy-server-nameserver': chinaDohDNS,
+    'proxy-server-nameserver': chinaDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
@@ -421,6 +420,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   const hosts = {
     ...projectedHosts,
     'doh.pub': ['1.12.12.12', '120.53.53.53'],
+    'dns.alidns.com': ['223.5.5.5', '223.6.6.6'],
     'cloudflare-dns.com': ['1.1.1.1', '1.0.0.1'],
     'dns.google': ['8.8.8.8', '8.8.4.4'],
     'services.googleapis.cn': 'services.googleapis.com',
@@ -442,20 +442,21 @@ function main(config) {
     return !excludeFilter.test(proxy.name);
   });
 
-  const uniqueNames = new Set();
+  const existingNames = new Set(rawFiltered.map((p) => p.name));
+  const assignedNames = new Set();
   const filteredProxies = [];
   for (const proxy of rawFiltered) {
     let name = proxy.name;
-    if (!uniqueNames.has(name)) {
-      uniqueNames.add(name);
+    if (!assignedNames.has(name)) {
+      assignedNames.add(name);
       filteredProxies.push(proxy);
     } else {
       let count = 2;
-      while (uniqueNames.has(`${name} ${count}`)) {
+      while (existingNames.has(`${name} ${count}`) || assignedNames.has(`${name} ${count}`)) {
         count++;
       }
       const newName = `${name} ${count}`;
-      uniqueNames.add(newName);
+      assignedNames.add(newName);
       filteredProxies.push({ ...proxy, name: newName });
     }
   }
