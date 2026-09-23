@@ -24,7 +24,6 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **单卡片极简美学**：主界面仅保留唯一的核心卡片 `节点选择`，彻底去除冗余的多级分流卡片，告别滑动地狱。
 - **深度广告拦截（REJECT 秒杀）**：集成本土化深度去广告规则集（`217heidai/adblockfilters` 每 8 小时动态清洗合集），毫秒级物理阻断国产主流 App 启动页 5 秒开屏广告、摇一摇跳转与隐私追踪打点，直接不加载、零流量消耗。
 - **大文件与游戏下载满速直连防偷跑**：独立分离苹果服务（`apple-cn.mrs`）、微软服务（`microsoft@cn.mrs`）与 Steam 游戏下载（`steam@cn.mrs`）走内核原生 `DIRECT` 直连出站，保障 App Store 软件下载、iOS 固件更新、Windows Update 与 Steam 游戏下载跑满家宽千兆速度，1KB 都不偷跑机场海外流量。
-- **STUN 语音/视频会议直通**：紧跟 NTP（UDP 123）后置入 STUN（UDP 3478）端对端穿透保护，微信视频通话、腾讯会议、飞书等通话毫秒级端对端打洞，彻底解决挂代理通话前几秒静音与断联痛点。
 - **白名单精准分流**：采用纯大陆标准 `cn.mrs`，拦截国外 QUIC 流量（带 no-resolve 防 DNS 泄漏并逼退 TCP 秒开），国内服务与局域网直接走内核原生 `DIRECT` 直连，国外全协议流量通过 `节点选择` 满血转发出海。
 - **轻量二进制规则集**：规则集来源统一采用经过深度优化的 `bett-rules` 与 `adblockfilters` 仓库，全量编译为 `.mrs` 紧凑二进制格式，针对移动端网络环境调优，配合全球 CDN 加速，加载极速，闪存与内存占用极低。
 - **专线 Hosts 映射闭包**：保留私有 DNS 自动嗅探算法，采用安全闭包投射与 Hosts 精确改写，杜绝全网域名泛化误伤，确保专线与中转节点入口正常解析。
@@ -47,17 +46,16 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ```text
   1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
-  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - 通用 STUN 语音/视频通话端对端直通 (微信/QQ电话与会议免静音)
-  3. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
-  4. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
-  5. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
-  6. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
-  7. RULE-SET,steam_cn,DIRECT                     - Steam 游戏下载满速直连 (满速防耗流量)
-  8. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (小米/华为等系统服务优先放行)
-  9. RULE-SET,ads,REJECT                          - 国内深度广告与开屏秒杀 (拦截残留流氓广告)
-  10. blockForeignQuic (AND UDP 443),REJECT       - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
-  11. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
-  12. MATCH,节点选择                              - 其余海外业务统一满血出海
+  2. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
+  3. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
+  4. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
+  5. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
+  6. RULE-SET,steam_cn,DIRECT                     - Steam 游戏下载满速直连 (满速防耗流量)
+  7. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (小米/华为等系统服务优先放行)
+  8. RULE-SET,ads,REJECT                          - 国内深度广告与开屏秒杀 (拦截残留流氓广告)
+  9. blockForeignQuic (AND UDP 443),REJECT        - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
+  10. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
+  11. MATCH,节点选择                              - 其余海外业务统一满血出海
 ```
 
 ---

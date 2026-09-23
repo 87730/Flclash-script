@@ -489,7 +489,6 @@ function main(config) {
   // 规则链：系统协议与直连优先，广告拦截精准后置，海外流量安全出海
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
-    'AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
     'RULE-SET,apple_cn,DIRECT',
