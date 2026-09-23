@@ -487,7 +487,7 @@ function main(config) {
     },
   ];
 
-  // 规则链：系统协议与直连优先，广告拦截精准后置，海外流量安全出海
+  // 规则链：系统协议与大文件直连 -> 广告秒杀 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
@@ -495,8 +495,8 @@ function main(config) {
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,steam_cn,DIRECT',
-    'RULE-SET,cn,DIRECT',
     'RULE-SET,ads,REJECT',
+    'RULE-SET,cn,DIRECT',
     ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',

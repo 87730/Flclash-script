@@ -42,7 +42,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## 规则拓扑矩阵 (全量 MRS 二进制 · 直连优先防误杀)
+## 规则拓扑矩阵 (全量 MRS 二进制 · 广告秒杀与直连防偷跑)
 
 ```text
   1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
@@ -51,8 +51,8 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
   4. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
   5. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
   6. RULE-SET,steam_cn,DIRECT                     - Steam 游戏下载满速直连 (满速防耗流量)
-  7. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (小米/华为等系统服务优先放行)
-  8. RULE-SET,ads,REJECT                          - 国内深度广告与开屏秒杀 (拦截残留流氓广告)
+  7. RULE-SET,ads,REJECT                          - 国内深度广告与开屏秒杀 (优先拦截所有第三方广告联盟与开屏)
+  8. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (良性国内服务畅通无阻)
   9. blockForeignQuic (AND UDP 443),REJECT        - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
   10. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
   11. MATCH,节点选择                              - 其余海外业务统一满血出海
