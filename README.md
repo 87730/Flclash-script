@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ```text
   1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
-  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - STUN 语音/视频会议端对端直通
+  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - 通用 STUN 语音/视频通话端对端直通 (微信/QQ电话与会议免静音)
   3. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
   4. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
   5. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)

@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ```text
   1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
-  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - STUN voice/conference P2P pass-through
+  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - Universal STUN P2P pass-through (WeChat/QQ audio & video calls)
   3. RULE-SET,private,DIRECT                      - Local / private domains
   4. RULE-SET,private_ip,DIRECT                   - Local / private IPs
   5. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)

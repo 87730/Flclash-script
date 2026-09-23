@@ -358,7 +358,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const dns = {
     enable: true,
-    ipv6: true,
+    ipv6: originalDnsConfig['ipv6'] !== undefined ? originalDnsConfig['ipv6'] : true,
     'use-hosts': true,
     'cache-algorithm': 'arc',
     'use-system-hosts': true,
@@ -380,7 +380,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'nameserver-policy': {
       'rule-set:cn': chinaDNS,
     },
-    'direct-nameserver': ['system', ...chinaDNS],
+    'direct-nameserver': chinaDNS,
     'direct-nameserver-follow-policy': true,
   };
 
@@ -522,6 +522,11 @@ function main(config) {
   };
 
   // 尊重客户端与上游设置：未提供时才赋予安全保底，不强行覆盖用户在界面自定义的端口与偏好
+  if (config['ipv6'] !== undefined) {
+    newConfig['ipv6'] = config['ipv6'];
+  } else if (!('ipv6' in newConfig)) {
+    newConfig['ipv6'] = true;
+  }
   if (!newConfig['mixed-port'] && !newConfig['port']) {
     newConfig['mixed-port'] = 7890;
   }
