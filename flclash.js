@@ -59,7 +59,8 @@ const selectBaseOption = {
   type: 'select',
   interval: 600,
   timeout: 3000,
-  url: 'https://cp.cloudflare.com/generate_204',
+  url: 'https://www.gstatic.com/generate_204',
+  'expected-status': 204,
   lazy: true,
   'max-failed-times': 3,
 };
@@ -481,9 +482,6 @@ function main(config) {
     ...config,
     dns,
     hosts,
-    'mixed-port': config['mixed-port'] || 7890,
-    mode: 'rule',
-    'log-level': 'warning',
     'unified-delay': true,
     'tcp-concurrent': true,
     'keep-alive-idle': 300,
@@ -498,6 +496,17 @@ function main(config) {
     'rule-providers': ruleProviders,
     rules,
   };
+
+  // 尊重客户端与上游设置：未提供时才赋予安全保底，不强行覆盖用户在界面自定义的端口与偏好
+  if (!newConfig['mixed-port'] && !newConfig['port']) {
+    newConfig['mixed-port'] = 7890;
+  }
+  if (!newConfig['mode']) {
+    newConfig['mode'] = 'rule';
+  }
+  if (!newConfig['log-level']) {
+    newConfig['log-level'] = 'warning';
+  }
 
   if (config['external-controller']) {
     newConfig['external-controller'] = config['external-controller'];
