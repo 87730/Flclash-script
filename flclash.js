@@ -457,9 +457,6 @@ function main(config) {
 
   const fpTypes = ['trojan', 'vless', 'vmess'];
   for (const proxy of mappedProxies) {
-    if (!('ip-version' in proxy)) {
-      proxy['ip-version'] = 'dual';
-    }
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
       if (proxy.tls || proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
