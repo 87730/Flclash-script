@@ -38,6 +38,21 @@ const ruleProviders = {
     url: `${RS_BASE}/geoip/private.mrs`,
     path: './ruleset/private_ip.mrs',
   },
+  ads: {
+    ...ruleProviderCommonDomain,
+    url: 'https://fastly.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockmihomolite.mrs',
+    path: './ruleset/adblockmihomolite.mrs',
+  },
+  apple_cn: {
+    ...ruleProviderCommonDomain,
+    url: `${RS_BASE}/geosite/apple-cn.mrs`,
+    path: './ruleset/apple-cn.mrs',
+  },
+  microsoft_cn: {
+    ...ruleProviderCommonDomain,
+    url: `${RS_BASE}/geosite/microsoft@cn.mrs`,
+    path: './ruleset/microsoft@cn.mrs',
+  },
   cn: {
     ...ruleProviderCommonDomain,
     url: `${RS_BASE}/geosite/cn.mrs`,
@@ -342,8 +357,8 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'cache-algorithm': 'arc',
     'use-system-hosts': true,
     'enhanced-mode': 'fake-ip',
-    'fake-ip-range': '198.18.0.1/15',
-    'fake-ip-range6': '2001:2::1/48',
+    'fake-ip-range': '198.18.0.1/16',
+    'fake-ip-range6': '2001:2::1/64',
     'fake-ip-filter': [
       'rule-set:private',
       'rule-set:fakeip_filter',
@@ -467,12 +482,16 @@ function main(config) {
     },
   ];
 
-  // 规则链：包含国外 QUIC 拦截测试
+  // 规则链：包含基础对时/打洞直通、广告拦截、国外 QUIC 拦截与大文件直连
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
+    'AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
+    'RULE-SET,ads,REJECT',
     ...blockForeignQuic,
+    'RULE-SET,apple_cn,DIRECT',
+    'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,cn,DIRECT',
     'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',
