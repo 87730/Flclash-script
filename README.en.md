@@ -43,17 +43,20 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Rule Providers (Full MRS Binaries)
+## Rule Providers Topology (Full MRS Binaries · Direct-First Architecture)
 
 ```text
-  private.mrs               - Local / private domains
-  private_ip.mrs            - Local / private IPs
-  adblockmihomolite.mrs     - Domestic deep ad-blocking & splash suppression (REJECT)
-  apple-cn.mrs              - Apple applications & firmware downloads (DIRECT)
-  microsoft@cn.mrs          - Windows Update & Microsoft large downloads (DIRECT)
-  cn.mrs                    - Mainland China service domains (DIRECT)
-  cn_ip.mrs                 - Mainland China IP ranges (DIRECT, no-resolve)
-  fakeip_filter.mrs         - Fake-IP whitelist filter
+  1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
+  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - STUN voice/conference P2P pass-through
+  3. RULE-SET,private,DIRECT                      - Local / private domains
+  4. RULE-SET,private_ip,DIRECT                   - Local / private IPs
+  5. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
+  6. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
+  7. RULE-SET,cn,DIRECT                           - Mainland China services (System services prioritized)
+  8. RULE-SET,ads,REJECT                          - Domestic deep ad-blocking & splash suppression
+  9. blockForeignQuic (AND UDP 443),REJECT        - Block foreign QUIC (forces instant TCP HTTPS fallback)
+  10. RULE-SET,cn_ip,DIRECT,no-resolve            - Mainland China IP ranges (DIRECT, no-resolve)
+  11. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
 ```
 
 ---

@@ -43,17 +43,20 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## 规则集拓扑 (全量 MRS 二进制)
+## 规则拓扑矩阵 (全量 MRS 二进制 · 直连优先防误杀)
 
 ```text
-  private.mrs               - 内网与局域网域名
-  private_ip.mrs            - 内网与局域网 IP
-  adblockmihomolite.mrs     - 国内深度广告与开屏拦截 (REJECT)
-  apple-cn.mrs              - 苹果应用与系统固件直连 (DIRECT)
-  microsoft@cn.mrs          - 微软系统更新与大文件直连 (DIRECT)
-  cn.mrs                    - 中国大陆服务域名 (DIRECT)
-  cn_ip.mrs                 - 中国大陆 IP 网段 (DIRECT, no-resolve)
-  fakeip_filter.mrs         - Fake-IP 白名单过滤
+  1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
+  2. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - STUN 语音/视频会议端对端直通
+  3. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
+  4. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
+  5. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
+  6. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
+  7. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (小米/华为等系统服务优先放行)
+  8. RULE-SET,ads,REJECT                          - 国内深度广告与开屏秒杀 (拦截残留流氓广告)
+  9. blockForeignQuic (AND UDP 443),REJECT        - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
+  10. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
+  11. MATCH,节点选择                              - 其余海外业务统一满血出海
 ```
 
 ---

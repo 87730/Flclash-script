@@ -482,17 +482,17 @@ function main(config) {
     },
   ];
 
-  // 规则链：包含基础对时/打洞直通、广告拦截、国外 QUIC 拦截与大文件直连
+  // 规则链：系统协议与直连优先，广告拦截精准后置，海外流量安全出海
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
-    'RULE-SET,ads,REJECT',
-    ...blockForeignQuic,
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,cn,DIRECT',
+    'RULE-SET,ads,REJECT',
+    ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',
   ];
