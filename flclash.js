@@ -60,8 +60,8 @@ const ruleProviders = {
   },
   cn: {
     ...ruleProviderCommonDomain,
-    url: `${RS_BASE}/geosite/cn.mrs`,
-    path: './ruleset/cn.mrs',
+    url: `${RS_BASE}/geosite/geolocation-cn.mrs`,
+    path: './ruleset/geolocation-cn.mrs',
   },
   cn_ip: {
     ...ruleProviderCommonIpcidr,
