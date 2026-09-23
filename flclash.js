@@ -53,6 +53,11 @@ const ruleProviders = {
     url: `${RS_BASE}/geosite/microsoft@cn.mrs`,
     path: './ruleset/microsoft@cn.mrs',
   },
+  steam_cn: {
+    ...ruleProviderCommonDomain,
+    url: `${RS_BASE}/geosite/steam@cn.mrs`,
+    path: './ruleset/steam@cn.mrs',
+  },
   cn: {
     ...ruleProviderCommonDomain,
     url: `${RS_BASE}/geosite/cn.mrs`,
@@ -136,6 +141,7 @@ const commonDnsRegex = new RegExp(
   'i',
 );
 
+const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
 const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
 const chinaDohDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#节点选择', 'https://dns.google/dns-query#节点选择'];
@@ -368,7 +374,8 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
-    'default-nameserver': chinaDohDNS,
+    // 引导 DNS：纯明文 IP，无证书校验与时钟死锁隐患，冷启动一毫秒秒开
+    'default-nameserver': chinaBootstrapDNS,
     nameserver: foreignDNS,
     'nameserver-policy': {
       'rule-set:cn': chinaDNS,
@@ -487,6 +494,7 @@ function main(config) {
     'RULE-SET,private_ip,DIRECT',
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
+    'RULE-SET,steam_cn,DIRECT',
     'RULE-SET,cn,DIRECT',
     'RULE-SET,ads,REJECT',
     ...blockForeignQuic,
