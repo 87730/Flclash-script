@@ -25,7 +25,7 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
-const RS_BASE = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo';
+const RS_BASE = 'https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo';
 
 const ruleProviders = {
   private: {
@@ -67,11 +67,6 @@ const ruleProviders = {
     ...ruleProviderCommonIpcidr,
     url: `${RS_BASE}/geoip/cn.mrs`,
     path: './ruleset/cn_ip.mrs',
-  },
-  fakeip_filter: {
-    ...ruleProviderCommonDomain,
-    url: `${RS_BASE}/geosite/fakeip-filter.mrs`,
-    path: './ruleset/fakeip-filter.mrs',
   },
 };
 
@@ -366,7 +361,14 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'fake-ip-range6': '2001:2::1/48',
     'fake-ip-filter': [
       'rule-set:private',
-      'rule-set:fakeip_filter',
+      'localhost.ptlogin2.qq.com',
+      '+.lan',
+      '+.local',
+      '+.stun.*',
+      '+.stun.*.*',
+      'time.*.com',
+      'time.*.apple.com',
+      '+.pool.ntp.org',
       ...proxyFakeIpFilter,
     ],
     'proxy-server-nameserver': chinaDNS,
