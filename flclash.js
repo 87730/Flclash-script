@@ -38,11 +38,6 @@ const ruleProviders = {
     url: `${RS_BASE}/geoip/private.mrs`,
     path: './ruleset/private_ip.mrs',
   },
-  ads: {
-    ...ruleProviderCommonDomain,
-    url: 'https://fastly.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockmihomolite.mrs',
-    path: './ruleset/adblockmihomolite.mrs',
-  },
   apple_cn: {
     ...ruleProviderCommonDomain,
     url: `${RS_BASE}/geosite/apple-cn.mrs`,
@@ -489,7 +484,7 @@ function main(config) {
     },
   ];
 
-  // 规则链：系统协议与大文件直连 -> 广告秒杀 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
+  // 规则链：系统协议与大文件直连 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
@@ -497,7 +492,6 @@ function main(config) {
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,steam_cn,DIRECT',
-    'RULE-SET,ads,REJECT',
     'RULE-SET,cn,DIRECT',
     ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',

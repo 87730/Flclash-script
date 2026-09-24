@@ -22,10 +22,9 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 ## Features
 
 - **Single-Card Minimalist Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter and infinite scrolling.
-- **Deep AdBlock (REJECT Instant Kill)**: Integrates localized deep ad-blocking rule-sets (`217heidai/adblockfilters` updated every 8 hours), physically blocking mobile splash screen ads, shake-to-jump ads, and analytics telemetry at the millisecond level with zero data consumption.
 - **Direct Large-File & Game Downloads**: Decouples Apple services (`apple-cn.mrs`), Microsoft services (`microsoft@cn.mrs`), and Steam game downloads (`steam@cn.mrs`) to route via kernel native `DIRECT`, allowing full-speed broadband downloads for App Store apps, iOS updates, Windows Updates, and Steam games without consuming proxy data.
 - **Precision Whitelist Routing**: Uses comprehensive Mainland China service dataset `geolocation-cn.mrs` (covering OEM system services, app stores, and security inspection endpoints), blocks foreign QUIC traffic (with no-resolve to prevent DNS leaks and force instant TCP HTTPS fallback), routing domestic services directly via native `DIRECT`, while foreign traffic forwards smoothly via `节点选择`.
-- **Lightweight MRS Binary Rules**: Rule-sets are directly powered by **MetaCubeX official `meta-rules-dat` repository** (5200+ Stars) alongside the `adblockfilters` deep ad-blocking engine, compiled into `.mrs` compact binary format, tailored for mobile environments and accelerated by global CDNs for ultra-fast loading and minimal memory footprint.
+- **Lightweight MRS Binary Rules**: Rule-sets are directly powered by **MetaCubeX official `meta-rules-dat` repository** (5200+ Stars), compiled into `.mrs` compact binary format, tailored for mobile environments and accelerated by global CDNs for ultra-fast loading and minimal memory footprint.
 - **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak Protection**: Standardizes Fake-IP pools (`198.18.0.1/15` and `2001:2::1/48` high-compatibility anti-conflict subnets), ensuring remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with `direct-nameserver-follow-policy` enabled and bootstrap DNS using plain IPs to eliminate certificate deadlocks.
 - **Safe Fallback for User Preferences**: Applies non-destructive fallback assignments for `mixed-port: 7890`, `mode: rule`, and `log-level: warning`, respecting user customizations made within FlClash or Clash Verge Rev.
@@ -42,7 +41,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 
 ---
 
-## Rule Providers Topology (Full MRS Binaries · AdBlock Prioritized & Direct Downloads)
+## Rule Providers Topology (Full MRS Binaries · Official MetaCubeX & Direct Downloads)
 
 ```text
   1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
@@ -51,11 +50,10 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
   4. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
   5. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
   6. RULE-SET,steam_cn,DIRECT                     - Steam game download CDN (DIRECT)
-  7. RULE-SET,ads,REJECT                          - Domestic deep ad-blocking & splash suppression (Prioritized)
-  8. RULE-SET,cn,DIRECT                           - Mainland China services (DIRECT)
-  9. blockForeignQuic (AND UDP 443),REJECT        - Block foreign QUIC (forces instant TCP HTTPS fallback)
-  10. RULE-SET,cn_ip,DIRECT,no-resolve            - Mainland China IP ranges (DIRECT, no-resolve)
-  11. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
+  7. RULE-SET,cn,DIRECT                           - Mainland China services (DIRECT)
+  8. blockForeignQuic (AND UDP 443),REJECT        - Block foreign QUIC (forces instant TCP HTTPS fallback)
+  9. RULE-SET,cn_ip,DIRECT,no-resolve             - Mainland China IP ranges (DIRECT, no-resolve)
+  10. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
 ```
 
 ---
