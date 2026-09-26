@@ -28,7 +28,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
 - **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak Protection**: Standardizes Fake-IP pools (`198.18.0.1/15` and `2001:2::1/48` high-compatibility anti-conflict subnets), ensuring remote encrypted DoH resolution for foreign domains and direct resolution for domestic domains, with `direct-nameserver-follow-policy` enabled and bootstrap DNS using plain IPs to eliminate certificate deadlocks.
 - **Safe Fallback for User Preferences**: Applies non-destructive fallback assignments for `mixed-port: 7890`, `mode: rule`, and `log-level: warning`, respecting user customizations made within FlClash or Clash Verge Rev.
-- **Mobile & Performance Optimizations**: Latency testing upgraded to Google's native probe (`gstatic.com/generate_204`) with strict `expected-status: 204` checks, disabled background process scanning, collision-proof duplicate node name indexing, automatic Chrome uTLS fingerprint padding, physical IP deadlock prevention for major public DNS, and dual TCP keep-alive tuning.
+- **Mobile & Performance Optimizations**: Background automated latency polling and redundant process scanning completely disabled (zero background ping packets and zero idle battery drain), collision-proof duplicate node name indexing, automatic Chrome uTLS fingerprint padding, physical IP deadlock prevention for major public DNS, and dual TCP keep-alive tuning.
 
 ---
 

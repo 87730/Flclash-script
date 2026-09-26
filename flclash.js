@@ -67,12 +67,6 @@ const ruleProviders = {
 
 const selectBaseOption = {
   type: 'select',
-  interval: 600,
-  timeout: 3000,
-  url: 'https://www.gstatic.com/generate_204',
-  'expected-status': 204,
-  lazy: true,
-  'max-failed-times': 3,
 };
 
 const commonDnsList = [
@@ -541,6 +535,13 @@ function main(config) {
   delete newConfig['external-ui'];
   delete newConfig['external-ui-url'];
   delete newConfig['global-client-fingerprint'];
+
+  // 彻底拔除机场订阅自带的后台自动测速与健康检查
+  if (newConfig['proxy-providers']) {
+    for (const key of Object.keys(newConfig['proxy-providers'])) {
+      delete newConfig['proxy-providers'][key]['health-check'];
+    }
+  }
 
   return newConfig;
 }
