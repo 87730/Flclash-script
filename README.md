@@ -14,10 +14,10 @@ Mihomo 与 FlClash 配置覆写脚本。
 在 FlClash、Clash Verge Rev 或 Mihomo Party 的配置覆写中填入以下链接：
 
 ```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
+https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ```
 
-*(原链接 `flclash.js` 同步保留，双链接均可正常使用)*
+*(历史链接 `mihomoscript.js` 与 `flclash.js` 均同步保留，多直链完全兼容)*
 
 ---
 

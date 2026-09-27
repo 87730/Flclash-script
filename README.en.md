@@ -14,10 +14,10 @@ Configuration override script for Mihomo and FlClash.
 Enter the following URL into the script override settings in FlClash, Clash Verge Rev, or Mihomo Party:
 
 ```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
+https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ```
 
-*(Legacy URL `flclash.js` is also maintained for backwards compatibility)*
+*(Legacy URLs `mihomoscript.js` and `flclash.js` are also maintained for backwards compatibility)*
 
 ---
 
