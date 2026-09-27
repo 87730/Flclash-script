@@ -1,6 +1,6 @@
-# Flclash-script
+# Mihomo-script
 
-FlClash 与 Mihomo (Clash Meta) 配置覆写脚本。
+Mihomo (Clash Meta) 与 FlClash 配置覆写脚本。
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -14,8 +14,10 @@ FlClash 与 Mihomo (Clash Meta) 配置覆写脚本。
 在 FlClash、Clash Verge Rev 或 Mihomo Party 的配置覆写中填入以下链接：
 
 ```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
+https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
 ```
+
+*(原链接 `flclash.js` 同步保留，双链接均可正常使用)*
 
 ---
 

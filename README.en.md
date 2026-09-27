@@ -1,6 +1,6 @@
-# Flclash-script
+# Mihomo-script
 
-Configuration override script for FlClash and Mihomo (Clash Meta).
+Configuration override script for Mihomo (Clash Meta) and FlClash.
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -14,8 +14,10 @@ Configuration override script for FlClash and Mihomo (Clash Meta).
 Enter the following URL into the script override settings in FlClash, Clash Verge Rev, or Mihomo Party:
 
 ```text
-https://raw.githubusercontent.com/87730/Flclash-script/main/flclash.js
+https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
 ```
+
+*(Legacy URL `flclash.js` is also maintained for backwards compatibility)*
 
 ---
 
