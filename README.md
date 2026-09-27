@@ -17,8 +17,6 @@ Mihomo 与 FlClash 配置覆写脚本。
 https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ```
 
-*(历史链接 `mihomoscript.js` 与 `flclash.js` 均同步保留，多直链完全兼容)*
-
 ---
 
 ## 特性

@@ -17,8 +17,6 @@ Enter the following URL into the script override settings in FlClash, Clash Verg
 https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ```
 
-*(Legacy URLs `mihomoscript.js` and `flclash.js` are also maintained for backwards compatibility)*
-
 ---
 
 ## Features
