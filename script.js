@@ -130,7 +130,10 @@ const chinaDNS = [
   'https://223.5.5.5/dns-query#DIRECT',
   'https://1.12.12.12/dns-query#DIRECT',
 ];
-const foreignDNS = ['https://cloudflare-dns.com/dns-query#节点选择', 'https://dns.google/dns-query#节点选择'];
+const foreignDNS = [
+  'https://1.1.1.1/dns-query#节点选择',
+  'https://8.8.8.8/dns-query#节点选择',
+];
 
 function hostSpecificity(pattern) {
   if (pattern.startsWith('+.')) return 2;
