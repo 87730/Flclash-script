@@ -131,8 +131,9 @@ const chinaDNS = [
   'https://1.12.12.12/dns-query#DIRECT',
 ];
 const foreignDNS = [
-  'https://1.1.1.1/dns-query#节点选择',
   'https://8.8.8.8/dns-query#节点选择',
+  'https://1.1.1.1/dns-query#节点选择',
+  'https://8.8.4.4/dns-query#节点选择',
 ];
 
 function hostSpecificity(pattern) {
