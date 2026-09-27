@@ -126,7 +126,10 @@ const commonDnsRegex = new RegExp(
 );
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
-const chinaDNS = ['223.5.5.5#DIRECT', '119.29.29.29#DIRECT'];
+const chinaDNS = [
+  'https://223.5.5.5/dns-query#DIRECT',
+  'https://1.12.12.12/dns-query#DIRECT',
+];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#节点选择', 'https://dns.google/dns-query#节点选择'];
 
 function hostSpecificity(pattern) {
