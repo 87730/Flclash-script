@@ -1,6 +1,6 @@
 # Mihomo-script
 
-Mihomo (Clash Meta) 与 FlClash 配置覆写脚本。
+Mihomo 与 FlClash 配置覆写脚本。
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -66,7 +66,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
 - Clash Verge Rev
 - Mihomo Party
 - Clash Nyanpasu
-- 任意支持 JavaScript 配置覆写的 Clash Meta / Mihomo 客户端
+- 任意支持 JavaScript 配置覆写的 Mihomo 客户端
 
 ---
 

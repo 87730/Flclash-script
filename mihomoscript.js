@@ -1,5 +1,5 @@
 /**
- * Mihomo (Clash Meta) & FlClash 极简配置覆写脚本
+ * Mihomo & FlClash 极简配置覆写脚本
  * https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
  */
 

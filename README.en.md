@@ -1,6 +1,6 @@
 # Mihomo-script
 
-Configuration override script for Mihomo (Clash Meta) and FlClash.
+Configuration override script for Mihomo and FlClash.
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -66,7 +66,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/mihomoscript.js
 - Clash Verge Rev
 - Mihomo Party
 - Clash Nyanpasu
-- Any Clash Meta client supporting JavaScript (mihomoScript) overrides
+- Any client supporting JavaScript (mihomoScript) overrides
 
 ---
 
