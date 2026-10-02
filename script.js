@@ -368,8 +368,11 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       '+.pool.ntp.org',
       ...proxyFakeIpFilter,
     ],
-    // 节点服务器域名解析：纯明文 IP，零握手开销秒解析节点入口，彻底消除 couldn't find ip 报错
-    'proxy-server-nameserver': chinaBootstrapDNS,
+    // 节点服务器域名解析：优先继承专线专属私有 DNS，未提供时由纯明文 IP 兜底秒连
+    'proxy-server-nameserver':
+      privateProxyServerNameservers.length > 0
+        ? [...new Set([...privateProxyServerNameservers, ...chinaBootstrapDNS])]
+        : chinaBootstrapDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
