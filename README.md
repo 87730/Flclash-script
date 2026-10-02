@@ -22,13 +22,13 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ## 特性
 
 - **单卡片极简美学**：主界面仅保留唯一的核心卡片 `节点选择`，彻底去除冗余的多级分流卡片，告别滑动地狱。
-- **大文件与游戏下载满速直连防偷跑**：独立分离苹果服务（`apple-cn.mrs`）、微软服务（`microsoft@cn.mrs`）与 Steam 游戏下载（`steam@cn.mrs`）走内核原生 `DIRECT` 直连出站，保障 App Store 软件下载、iOS 固件更新、Windows Update 与 Steam 游戏下载跑满家宽千兆速度，1KB 都不偷跑机场海外流量。
+- **大文件与游戏下载满速直连防偷跑**：独立分离苹果服务（`apple-cn.mrs`）、微软服务（`microsoft@cn.mrs`）与 Steam 游戏下载（`steam@cn.mrs`）走内核原生 `DIRECT` 直连出站，保障由规则集覆盖的 App Store 软件下载、iOS 固件更新、Windows Update 与 Steam 游戏下载跑满家宽千兆速度，不偷跑机场海外流量。
 - **白名单精准分流**：采用 MetaCubeX 官方全量大陆规则集 `cn.mrs`（涵盖 11 万行国内大厂主域、通配及各大国产手机系统生态），拦截国外 QUIC 流量（带 no-resolve 防 DNS 泄漏并逼退 TCP 秒开），国内服务与局域网直接走内核原生 `DIRECT` 直连，国外全协议流量通过 `节点选择` 满血转发出海。
-- **轻量二进制规则集**：规则集来源统一采用 **MetaCubeX 官方团队维护的 `meta-rules-dat` 直营仓库**（5200+ Stars），全量编译为 `.mrs` 紧凑二进制格式，针对移动端网络环境调优，配合全球 CDN 加速，加载极速，闪存与内存占用极低。
+- **轻量二进制规则集**：规则内容来源于 **MetaCubeX 官方团队维护的 `meta-rules-dat` 仓库**（5200+ Stars），通过全球 jsDelivr CDN 加速交付，全量编译为 `.mrs` 紧凑二进制格式，针对移动端网络环境调优，加载极速，闪存与内存占用极低。
 - **专线 Hosts 映射闭包**：保留私有 DNS 自动嗅探算法，采用安全闭包投射与 Hosts 精确改写，杜绝全网域名泛化误伤，确保专线与中转节点入口正常解析。
-- **严密防 DNS 泄露**：启用 Fake-IP 地址池（`198.18.0.1/15` 与 `2001:2::1/48` 跨平台高兼容防冲突网段），开启 `respect-rules: true` 保证 DNS 严格遵循分流规则，内存级 ARC 缓存池约束为 4096 条，海外出海采用 Google/Cloudflare 纯 IP 双通道加密 DoH（8.8.8.8 优先，1.1.1.1 备选，消除寻路超时死锁），国内直连全面升级为阿里/腾讯纯 IP 加密 DoH（消除明文 UDP 53 窥探），节点域名解析与引导 DNS 采用纯明文 IP 杜绝证书死锁与无法寻址报错，开启 `direct-nameserver-follow-policy` 优先遵从纯净直连解析策略。
+- **严密防 DNS 泄露**：启用 Fake-IP 地址池（`198.18.0.1/15` 与 `2001:2::1/48` 跨平台高兼容防冲突网段），开启 `respect-rules: true` 保证 DNS 严格遵循分流规则，内存级 ARC 缓存池约束为 4096 条，海外出海采用 Google/Cloudflare 纯 IP 双通道加密 DoH（8.8.8.8 优先，1.1.1.1 备选，消除寻路超时死锁），国内业务直连解析全面升级为阿里/腾讯纯 IP 加密 DoH（消除常规业务明文 UDP 53 窥探），节点域名解析与引导 DNS 采用纯明文 IP 杜绝证书死锁与无法寻址报错，开启 `direct-nameserver-follow-policy` 优先遵从纯净直连解析策略。
 - **客户端现场设置安全保底**：对本地 `mixed-port: 7890`、`mode: rule` 与 `log-level: warning` 采用无配置时安全保底赋值，绝不粗暴覆盖用户在 FlClash 或 Clash Verge 界面自定义的个性化端口、静默日志或分流偏好。
-- **性能与保活优化**：彻底关闭后台自动定时测速与无意义进程扫描（杜绝后台持续发包偷跑流量与耗电），加入节点重名自适应序号防冲突、仅对普通 TLS 补全 Chrome 指纹并保留 Reality 原生指纹、主流公共 DNS 物理 IP 防死锁闭环及科学 TCP 双保活调优。
+- **性能与保活优化**：彻底关闭节点后台自动定时测速与无意义进程扫描（杜绝节点自动探测发包与异常淘汰），加入节点重名自适应序号防冲突、仅对普通 TLS 补全 Chrome 指纹并保留 Reality 原生指纹、主流公共 DNS 物理 IP 防死锁闭环及科学 TCP 双保活调优。
 
 ---
 

@@ -281,13 +281,13 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   const proxyServerNameservers = originalDnsConfig['proxy-server-nameserver'] || [];
   const listenValue = originalDnsConfig['listen'];
 
+  // 兼容嗅探：若上游配置定义了本地 127 回环 DNS 监听或 proxy-server 包含回环入口，则自动按 hosts 映射重写节点 server
   const shouldRewriteByHosts =
-    proxyServerNameservers.length === 1 &&
     typeof listenValue === 'string' &&
     listenValue.length > 0 &&
     (proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes(listenValue.toLowerCase())) ||
-      (listenValue.includes('0.0.0.0') &&
-        proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes('127.0.0.1'))));
+      proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes('127.0.0.1')) ||
+      listenValue.includes('127.0.0.1'));
 
   const mappedProxies = shouldRewriteByHosts ? applyHostsToProxies(filteredProxies, config.hosts) : filteredProxies;
 
