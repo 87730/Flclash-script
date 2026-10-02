@@ -348,8 +348,10 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   const dns = {
     enable: true,
     ipv6: originalDnsConfig['ipv6'] !== undefined ? originalDnsConfig['ipv6'] : true,
+    'respect-rules': true,
     'use-hosts': true,
     'cache-algorithm': 'arc',
+    'cache-size': 4096,
     'use-system-hosts': true,
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
@@ -464,7 +466,8 @@ function main(config) {
   const fpTypes = ['trojan', 'vless', 'vmess'];
   for (const proxy of mappedProxies) {
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
-      if (proxy.tls || proxy['reality-opts']) {
+      // 仅对普通 TLS 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
+      if (proxy.tls && !proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
       }
     }
