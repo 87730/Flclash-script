@@ -493,6 +493,7 @@ function main(config) {
 
   // 规则链：系统协议与大文件直连 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
+    'DST-PORT,853,REJECT',
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',

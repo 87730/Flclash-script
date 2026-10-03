@@ -44,16 +44,17 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ## Rule Providers Topology (Full MRS Binaries · Official MetaCubeX & Direct Downloads)
 
 ```text
-  1. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
-  2. RULE-SET,private,DIRECT                      - Local / private domains
-  3. RULE-SET,private_ip,DIRECT                   - Local / private IPs
-  4. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
-  5. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
-  6. RULE-SET,steam_cn,DIRECT                     - Steam game download CDN (DIRECT)
-  7. RULE-SET,cn,DIRECT                           - Mainland China services (DIRECT)
-  8. blockForeignQuic (AND UDP 443),REJECT        - Block foreign QUIC (forces instant TCP HTTPS fallback)
-  9. RULE-SET,cn_ip,DIRECT,no-resolve             - Mainland China IP ranges (DIRECT, no-resolve)
-  10. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
+  1. DST-PORT,853,REJECT                          - Block DNS over TLS (DoT, prevents private DNS bypassing routing)
+  2. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
+  3. RULE-SET,private,DIRECT                      - Local / private domains
+  4. RULE-SET,private_ip,DIRECT                   - Local / private IPs
+  5. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
+  6. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
+  7. RULE-SET,steam_cn,DIRECT                     - Steam game download CDN (DIRECT)
+  8. RULE-SET,cn,DIRECT                           - Mainland China services (DIRECT)
+  9. blockForeignQuic (AND UDP 443),REJECT        - Block foreign QUIC (forces instant TCP HTTPS fallback)
+  10. RULE-SET,cn_ip,DIRECT,no-resolve            - Mainland China IP ranges (DIRECT, no-resolve)
+  11. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
 ```
 
 ---
