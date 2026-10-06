@@ -45,16 +45,17 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 
 ```text
   1. DST-PORT,853,REJECT                          - 拦截 DNS over TLS (DoT，防止设备私有 DNS 绕过分流)
-  2. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
-  3. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
-  4. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
-  5. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
-  6. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
-  7. RULE-SET,steam_cn,DIRECT                     - Steam 游戏下载满速直连 (满速防耗流量)
-  8. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (良性国内服务畅通无阻)
-  9. blockForeignQuic (AND UDP 443),REJECT        - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
-  10. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
-  11. MATCH,节点选择                              - 其余海外业务统一满血出海
+  2. IP-CIDR,172.19.0.0/30,REJECT,no-resolve      - 拦截 TUN 虚拟网卡保留网段 (防止 Android 走 DIRECT 引发内核路由自循环死锁)
+  3. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 系统对时直通
+  4. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
+  5. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
+  6. RULE-SET,apple_cn,DIRECT                     - 苹果应用商店与固件直连 (满速防耗流量)
+  7. RULE-SET,microsoft_cn,DIRECT                 - 微软更新补丁与 CDN 直连 (满速防耗流量)
+  8. RULE-SET,steam_cn,DIRECT                     - Steam 游戏下载满速直连 (满速防耗流量)
+  9. RULE-SET,cn,DIRECT                           - 大陆服务原生直连 (良性国内服务畅通无阻)
+  10. blockForeignQuic (AND UDP 443),REJECT       - 拦截国外 QUIC (带 no-resolve 防泄露并逼切 TCP 秒开)
+  11. RULE-SET,cn_ip,DIRECT,no-resolve            - 大陆 IP 网段兜底直连
+  12. MATCH,节点选择                              - 其余海外业务统一满血出海
 ```
 
 ---
