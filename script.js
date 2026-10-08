@@ -69,61 +69,9 @@ const selectBaseOption = {
   type: 'select',
 };
 
-const commonDnsList = [
-  '223.5.5.5',
-  '223.6.6.6',
-  '119.29.29.29',
-  '1.12.12.12',
-  '120.53.53.53',
-  '114.114.114.114',
-  '180.76.76.76',
-  '1.2.4.8',
-  '116.116.116.116',
-  '101.226.4.6',
-  '123.125.81.6',
-  '180.184.1.1',
-  '180.184.2.2',
-  '2400:3200::1',
-  '2400:3200:baba::1',
-  '2402:4e00::',
-  '2400:da00::6666',
-  '1.1.1.1',
-  '1.0.0.1',
-  '8.8.8.8',
-  '8.8.4.4',
-  '9.9.9.9',
-  '149.112.112.112',
-  '208.67.222.222',
-  '208.67.220.220',
-  '2606:4700:4700::1111',
-  '2606:4700:4700::1001',
-  '2001:4860:4860::8888',
-  '2001:4860:4860::8844',
-  '2620:fe::fe',
-  '2620:fe::9',
-  '2620:119:35::35',
-  '2620:119:53::53',
-  'alidns',
-  'tencent',
-  'dnspod',
-  'baidu',
-  'onedns',
-  '360',
-  'cloudflare',
-  'google',
-  'quad9',
-  'opendns',
-  'nextdns',
-  'adguard',
-  'smartdns',
-  'cleanbrowsing',
-  'apple',
-];
-
-const commonDnsRegex = new RegExp(
-  commonDnsList.map((dns) => dns.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
-  'i',
-);
+// 识别常见大厂公共解析器（从专线私有 DNS 中过滤掉，防止普通公网 DoH 抢答导致节点连接死锁）
+const commonDnsRegex =
+  /(?:223\.[56]\.[56]\.[56]|119\.29\.29\.29|1\.12\.12\.12|120\.53\.53\.53|114\.114\.114\.114|180\.76\.76\.76|180\.184\.[12]\.[12]|1\.[01]\.[01]\.[1]|8\.8\.[48]\.[48]|9\.9\.9\.9|149\.112\.112\.112|208\.67\.22[02]\.22[02]|(?:alidns|tencent|dnspod|baidu|onedns|360|cloudflare|google|quad9|opendns|nextdns|adguard|smartdns)(?:\.|$))/i;
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
 const chinaDNS = [
@@ -241,11 +189,14 @@ function applyHostsToProxies(proxies, hosts) {
 
     if (!target) return proxy;
 
+    const isTrojanLike = ['trojan', 'hysteria', 'hysteria2', 'tuic', 'anytls'].includes(proxy.type);
+    const isVmessLike = ['vless', 'vmess'].includes(proxy.type);
+
     return {
       ...proxy,
       server: target,
-      ...(!proxy.servername && { servername: server }),
-      ...(!proxy.sni && { sni: server }),
+      ...(isVmessLike && !proxy.servername && { servername: server }),
+      ...(isTrojanLike && !proxy.sni && { sni: server }),
       ...(!proxy.host &&
         ['ws', 'http', 'h2', 'grpc'].includes(proxy.network) && {
           host: server,
