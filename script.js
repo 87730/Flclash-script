@@ -71,7 +71,7 @@ const selectBaseOption = {
 
 // 识别常见大厂公共解析器（从专线私有 DNS 中过滤掉，防止普通公网 DoH 抢答导致节点连接死锁）
 const commonDnsRegex =
-  /(?:223\.[56]\.[56]\.[56]|119\.29\.29\.29|1\.12\.12\.12|120\.53\.53\.53|114\.114\.114\.114|180\.76\.76\.76|180\.184\.[12]\.[12]|1\.[01]\.[01]\.[1]|8\.8\.[48]\.[48]|9\.9\.9\.9|149\.112\.112\.112|208\.67\.22[02]\.22[02]|(?:alidns|tencent|dnspod|baidu|onedns|360|cloudflare|google|quad9|opendns|nextdns|adguard|smartdns)(?:\.|$))/i;
+  /(?:223\.[56]\.[56]\.[56]|119\.2[89]\.2[89]\.2[89]|1\.12\.12\.12|120\.53\.53\.53|114\.114\.11[45]\.11[45]|180\.76\.76\.76|180\.184\.[12]\.[12]|1\.[01]\.[01]\.[1]|8\.8\.[48]\.[48]|9\.9\.9\.9|149\.112\.112\.112|208\.67\.22[02]\.22[02]|d(?:ns|oh|ot)\.pub|one\.one\.one\.one|(?:alidns|tencent|dnspod|baidu|onedns|360|cloudflare|google|quad9|opendns|nextdns|adguard|smartdns)(?:\.|$))/i;
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
 const chinaDNS = [
@@ -253,13 +253,15 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       .filter((server) => !isIpAddress(server)),
   ]);
 
-  const privateProxyServerNameservers = shouldRewriteByHosts ? [] : proxyServerNameservers;
-
   const isCommonDns = (dns) => {
     const value = String(dns).trim().toLowerCase();
     if (value === 'system' || value === 'system://') return true;
     return commonDnsRegex.test(value);
   };
+
+  const privateProxyServerNameservers = shouldRewriteByHosts
+    ? []
+    : proxyServerNameservers.map(stripDnsSuffix).filter((dns) => dns.length > 0 && !isCommonDns(dns));
 
   const privateDNS = [
     ...new Set(
@@ -420,8 +422,8 @@ function main(config) {
   const fpTypes = ['trojan', 'vless', 'vmess'];
   for (const proxy of mappedProxies) {
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
-      // 仅对普通 TLS 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
-      if (proxy.tls && !proxy['reality-opts']) {
+      // 仅对普通 TLS (含 trojan 默认 TLS) 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
+      if ((proxy.type === 'trojan' || proxy.tls) && !proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
       }
     }
@@ -498,9 +500,20 @@ function main(config) {
   }
 
   delete newConfig['tun'];
+  delete newConfig['sniffer'];
+  delete newConfig['experimental'];
+  delete newConfig['url-rewrite'];
+  delete newConfig['script'];
+  delete newConfig['clash-for-android'];
   delete newConfig['external-ui'];
   delete newConfig['external-ui-url'];
   delete newConfig['global-client-fingerprint'];
+
+  for (const key of Object.keys(newConfig)) {
+    if (key.startsWith('cfw-')) {
+      delete newConfig[key];
+    }
+  }
 
   // 彻底拔除机场订阅自带的后台自动测速与健康检查
   if (newConfig['proxy-providers']) {
