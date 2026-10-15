@@ -69,9 +69,20 @@ const selectBaseOption = {
   type: 'select',
 };
 
-// 识别常见大厂公共解析器（从专线私有 DNS 中过滤掉，防止普通公网 DoH 抢答导致节点连接死锁）
+// 识别常见公共解析器；域名边界同时允许点号与连字符，避免漏掉 cloudflare-dns.com 等官方端点。
 const commonDnsRegex =
-  /(?:223\.[56]\.[56]\.[56]|119\.2[89]\.2[89]\.2[89]|1\.12\.12\.12|120\.53\.53\.53|114\.114\.11[45]\.11[45]|180\.76\.76\.76|180\.184\.[12]\.[12]|1\.[01]\.[01]\.[1]|8\.8\.[48]\.[48]|9\.9\.9\.9|149\.112\.112\.112|208\.67\.22[02]\.22[02]|d(?:ns|oh|ot)\.pub|one\.one\.one\.one|(?:alidns|tencent|dnspod|baidu|onedns|360|cloudflare|google|quad9|opendns|nextdns|adguard|smartdns)(?:\.|$))/i;
+  /(?:^|[.-])(?:d(?:ns|oh|ot)\.pub|one\.one\.one\.one|(?:alidns|tencent|dnspod|baidu|onedns|360|cloudflare|google|quad9|opendns|nextdns|adguard|smartdns))(?:[.-]|$)/i;
+
+const commonDnsIps = new Set([
+  '223.5.5.5', '223.6.6.6', '119.29.29.29', '1.12.12.12', '120.53.53.53',
+  '114.114.114.114', '180.76.76.76', '1.2.4.8', '116.116.116.116',
+  '101.226.4.6', '123.125.81.6', '180.184.1.1', '180.184.2.2',
+  '2400:3200::1', '2400:3200:baba::1', '2402:4e00::', '2400:da00::6666',
+  '1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4', '9.9.9.9', '149.112.112.112',
+  '208.67.222.222', '208.67.220.220', '2606:4700:4700::1111',
+  '2606:4700:4700::1001', '2001:4860:4860::8888', '2001:4860:4860::8844',
+  '2620:fe::fe', '2620:fe::9', '2620:119:35::35', '2620:119:53::53',
+]);
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
 const chinaDNS = [
@@ -254,9 +265,15 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
   ]);
 
   const isCommonDns = (dns) => {
-    const value = String(dns).trim().toLowerCase();
+    const value = stripDnsSuffix(dns).trim().toLowerCase();
     if (value === 'system' || value === 'system://') return true;
-    return commonDnsRegex.test(value);
+    if (commonDnsIps.has(value)) return true;
+
+    const match = value.match(
+      /^(?:[a-z][a-z0-9+.-]*:\/\/)?(?:\[([^\]]+)\]|([^/:?#]+))/i,
+    );
+    const host = (match?.[1] || match?.[2] || value).toLowerCase().replace(/\.$/, '');
+    return commonDnsIps.has(host) || commonDnsRegex.test(host);
   };
 
   const privateProxyServerNameservers = shouldRewriteByHosts
