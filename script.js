@@ -451,15 +451,23 @@ function main(config) {
   const proxyProviders = config['proxy-providers'] || {};
   const hasProviders = Object.keys(proxyProviders).length > 0;
 
-  const proxyGroups = [
-    {
-      ...selectBaseOption,
-      name: '节点选择',
-      proxies: proxyNames.length > 0 ? proxyNames : (hasProviders ? [] : ['DIRECT']),
-      ...(hasProviders && { use: Object.keys(proxyProviders) }),
-      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
-    },
-  ];
+  const nodeGroup = {
+    ...selectBaseOption,
+    name: '节点选择',
+    icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png',
+  };
+
+  if (proxyNames.length > 0) {
+    nodeGroup.proxies = proxyNames;
+  } else if (!hasProviders) {
+    nodeGroup.proxies = ['DIRECT'];
+  }
+
+  if (hasProviders) {
+    nodeGroup.use = Object.keys(proxyProviders);
+  }
+
+  const proxyGroups = [nodeGroup];
 
   // 规则链：系统协议与大文件直连 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
