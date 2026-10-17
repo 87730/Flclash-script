@@ -67,6 +67,8 @@ const ruleProviders = {
 
 const selectBaseOption = {
   type: 'select',
+  url: 'https://www.gstatic.com/generate_204',
+  'expected-status': 204,
 };
 
 // 识别常见公共解析器；域名边界同时允许点号与连字符，避免漏掉 cloudflare-dns.com 等官方端点。
@@ -237,7 +239,7 @@ function isIpAddress(server) {
   );
 }
 
-function buildDnsAndHostsConfig(config, filteredProxies) {
+function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
   const originalDnsConfig = config.dns || {};
 
   const proxyServerNameservers = originalDnsConfig['proxy-server-nameserver'] || [];
@@ -317,11 +319,11 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const dns = {
     enable: true,
-    ipv6: originalDnsConfig['ipv6'] !== undefined ? originalDnsConfig['ipv6'] : true,
+    ipv6: isIpv6,
     'respect-rules': true,
     'use-hosts': true,
     'cache-algorithm': 'arc',
-    'cache-size': 4096,
+    'cache-max-size': 4096,
     'use-system-hosts': true,
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/15',
@@ -352,7 +354,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'nameserver-policy': {
       'rule-set:cn': chinaDNS,
     },
-    'direct-nameserver': chinaDNS,
+    'direct-nameserver': chinaBootstrapDNS,
     'direct-nameserver-follow-policy': true,
   };
 
@@ -434,7 +436,12 @@ function main(config) {
     }
   }
 
-  const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies);
+  const isIpv6 =
+    config['ipv6'] !== undefined
+      ? Boolean(config['ipv6'])
+      : (config.dns && config.dns['ipv6'] !== undefined ? Boolean(config.dns['ipv6']) : true);
+
+  const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies, isIpv6);
 
   const fpTypes = ['trojan', 'vless', 'vmess'];
   for (const proxy of mappedProxies) {
@@ -474,6 +481,7 @@ function main(config) {
     'DST-PORT,853,REJECT',
     'IP-CIDR,172.19.0.0/30,REJECT,no-resolve',
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
+    'AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
     'RULE-SET,apple_cn,DIRECT',
@@ -505,11 +513,7 @@ function main(config) {
   };
 
   // 尊重客户端与上游设置：未提供时才赋予安全保底，不强行覆盖用户在界面自定义的端口与偏好
-  if (config['ipv6'] !== undefined) {
-    newConfig['ipv6'] = config['ipv6'];
-  } else if (!('ipv6' in newConfig)) {
-    newConfig['ipv6'] = true;
-  }
+  newConfig['ipv6'] = isIpv6;
   if (!newConfig['mixed-port'] && !newConfig['port']) {
     newConfig['mixed-port'] = 7890;
   }

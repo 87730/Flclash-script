@@ -47,15 +47,16 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
   1. DST-PORT,853,REJECT                          - Block DNS over TLS (DoT, prevents private DNS bypassing routing)
   2. IP-CIDR,172.19.0.0/30,REJECT,no-resolve      - Block TUN adapter interface subnet (prevents Android DIRECT routing loop deadlock)
   3. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP system time-sync pass-through
-  4. RULE-SET,private,DIRECT                      - Local / private domains
-  5. RULE-SET,private_ip,DIRECT                   - Local / private IPs
-  6. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
-  7. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
-  8. RULE-SET,steam_cn,DIRECT                     - Steam game download CDN (DIRECT)
-  9. RULE-SET,cn,DIRECT                           - Mainland China services (DIRECT)
-  10. blockForeignQuic (AND UDP 443),REJECT       - Block foreign QUIC (forces instant TCP HTTPS fallback)
-  11. RULE-SET,cn_ip,DIRECT,no-resolve            - Mainland China IP ranges (DIRECT, no-resolve)
-  12. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
+  4. AND,((DST-PORT,3478),(NETWORK,udp)),DIRECT   - STUN voice/conference P2P pass-through
+  5. RULE-SET,private,DIRECT                      - Local / private domains
+  6. RULE-SET,private_ip,DIRECT                   - Local / private IPs
+  7. RULE-SET,apple_cn,DIRECT                     - Apple App Store & firmware downloads (DIRECT)
+  8. RULE-SET,microsoft_cn,DIRECT                 - Windows Update & Microsoft large files (DIRECT)
+  9. RULE-SET,steam_cn,DIRECT                     - Steam game download CDN (DIRECT)
+  10. RULE-SET,cn,DIRECT                          - Mainland China services (DIRECT)
+  11. blockForeignQuic (AND UDP 443),REJECT       - Block foreign QUIC (forces instant TCP HTTPS fallback)
+  12. RULE-SET,cn_ip,DIRECT,no-resolve            - Mainland China IP ranges (DIRECT, no-resolve)
+  13. MATCH,节点选择                              - Foreign traffic forwards smoothly via proxy
 ```
 
 ---
