@@ -501,7 +501,6 @@ function main(config) {
     'tcp-concurrent': true,
     'keep-alive-idle': 300,
     'keep-alive-interval': 30,
-    'find-process-mode': 'off',
     profile: {
       'store-selected': true,
       'store-fake-ip': true,
