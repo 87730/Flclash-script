@@ -24,7 +24,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 - **Single-Card Minimalist Layout**: The main interface displays exclusively one core card: `节点选择` (Node Selection), completely eliminating visual clutter and infinite scrolling.
 - **Direct Large-File & Game Downloads**: Decouples Apple services (`apple-cn.mrs`), Microsoft services (`microsoft@cn.mrs`), and Steam game downloads (`steam@cn.mrs`) to route via kernel native `DIRECT`, ensuring covered App Store downloads, iOS updates, Windows Updates, and Steam game downloads run at full speed without consuming proxy data.
 - **Precision Whitelist Routing**: Uses comprehensive Mainland China service ruleset `cn.mrs` (fully unrolled to cover WeChat, QQ, Taobao, JD, Bilibili, and mainstream domestic services), blocks foreign QUIC traffic (with no-resolve to prevent DNS leaks and force instant TCP HTTPS fallback), routing domestic services directly via native `DIRECT`, while foreign traffic forwards smoothly via `节点选择`.
-- **Lightweight MRS Binary Rules**: Rule content originates directly from **MetaCubeX official `meta-rules-dat` repository** (5200+ Stars) delivered via jsDelivr CDN acceleration, compiled into `.mrs` compact binary format, tailored for mobile environments for ultra-fast loading and minimal memory footprint.
+- **Lightweight MRS Binary Rules**: Rule content originates directly from the mobile-optimized **`bett-rules` official repository** delivered via jsDelivr CDN acceleration, compiled into `.mrs` compact binary format, tailored for mobile environments for ultra-fast loading and minimal memory footprint.
 - **Dedicated Transit DNS Adaptation**: Preserves private DNS sniffing and Hosts inheritance with exact domain matching and closure projections, preventing over-broad wildcards and ensuring dedicated transit and IPLC entries resolve properly.
 - **Anti-DNS-Leak Protection**: Standardizes Fake-IP pools (`198.18.0.1/15` and `2001:2::1/48` high-compatibility anti-conflict subnets), enforces `respect-rules: true` for strict DNS-to-routing alignment, bounds memory ARC cache to 4096 entries, dual-channel plain-IP DoH resolution (Google 8.8.8.8 prioritized, Cloudflare 1.1.1.1 fallback) for foreign domains to eliminate route-hunting deadlocks, alongside plain-IP DoH resolution (Alibaba/Tencent) for domestic business domains to eliminate cleartext UDP 53 snooping, with proxy server resolution prioritizing inherited transit private DNS and backed by plain IPs to eliminate certificate deadlocks and transit entry resolve failures, with `direct-nameserver-follow-policy` enabled.
 - **Safe Fallback for User Preferences**: Applies non-destructive fallback assignments for `mixed-port: 7890`, `mode: rule`, and `log-level: warning`, respecting user customizations made within FlClash or Clash Verge Rev.
@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 
 ---
 
-## Rule Providers Topology (Full MRS Binaries · Official MetaCubeX & Direct Downloads)
+## Rule Providers Topology (Full MRS Binaries · bett-rules Optimized Source)
 
 ```text
   1. DST-PORT,853,REJECT                          - Block DNS over TLS (DoT, prevents private DNS bypassing routing)

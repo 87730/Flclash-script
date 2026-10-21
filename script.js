@@ -25,7 +25,7 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
-const RS_BASE = 'https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo';
+const RS_BASE = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo';
 
 const ruleProviders = {
   private: {
