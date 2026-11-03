@@ -40,8 +40,8 @@ const ruleProviders = {
   },
   apple_cn: {
     ...ruleProviderCommonDomain,
-    url: `${RS_BASE}/geosite/apple-cn.mrs`,
-    path: './ruleset/apple-cn.mrs',
+    url: `${RS_BASE}/geosite/apple@cn.mrs`,
+    path: './ruleset/apple@cn.mrs',
   },
   microsoft_cn: {
     ...ruleProviderCommonDomain,
@@ -52,6 +52,11 @@ const ruleProviders = {
     ...ruleProviderCommonDomain,
     url: `${RS_BASE}/geosite/steam@cn.mrs`,
     path: './ruleset/steam@cn.mrs',
+  },
+  ads: {
+    ...ruleProviderCommonDomain,
+    url: `${RS_BASE}/geosite/category-ads-all.mrs`,
+    path: './ruleset/category-ads-all.mrs',
   },
   cn: {
     ...ruleProviderCommonDomain,
@@ -352,6 +357,7 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
     'default-nameserver': chinaBootstrapDNS,
     nameserver: foreignDNS,
     'nameserver-policy': {
+      'rule-set:private': 'system',
       'rule-set:cn': chinaDNS,
     },
     'direct-nameserver': chinaBootstrapDNS,
@@ -443,11 +449,11 @@ function main(config) {
 
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies, isIpv6);
 
-  const fpTypes = ['trojan', 'vless', 'vmess'];
+  const fpTypes = ['trojan', 'vless', 'vmess', 'hysteria2', 'tuic'];
   for (const proxy of mappedProxies) {
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
       // 仅对普通 TLS (含 trojan 默认 TLS) 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
-      if ((proxy.type === 'trojan' || proxy.tls) && !proxy['reality-opts']) {
+      if ((proxy.type === 'trojan' || proxy.type === 'hysteria2' || proxy.type === 'tuic' || proxy.tls) && !proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
       }
     }
@@ -476,7 +482,7 @@ function main(config) {
 
   const proxyGroups = [nodeGroup];
 
-  // 规则链：系统协议与大文件直连 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
+  // 规则链：系统协议与大文件直连 -> 广告拦截 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
     'DST-PORT,853,REJECT',
     'IP-CIDR,172.19.0.0/30,REJECT,no-resolve',
@@ -487,6 +493,7 @@ function main(config) {
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,steam_cn,DIRECT',
+    'RULE-SET,ads,REJECT',
     'RULE-SET,cn,DIRECT',
     ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',
