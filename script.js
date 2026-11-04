@@ -3,6 +3,11 @@
  * https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
  */
 
+// 深度配置清洗安全控制开关
+// true: 启用纯净化清洗（剔除局域网绑定穿透、多余分离端口、冲突网卡与底层探测，完全归还控制权给客户端 GUI）
+// false: 保持原始机场下发参数（100% 原始放行，无损还原基线）
+const ENABLE_CONFIG_CLEANUP = true;
+
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
@@ -451,6 +456,13 @@ function main(config) {
 
   const fpTypes = ['trojan', 'vless', 'vmess', 'hysteria2', 'tuic'];
   for (const proxy of mappedProxies) {
+    // 清理节点中的 null/undefined 异常键值（如某些 Hysteria2 节点下发的 up: null, down: null）
+    for (const [k, v] of Object.entries(proxy)) {
+      if (v === null || v === undefined) {
+        delete proxy[k];
+      }
+    }
+
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
       // 仅对普通 TLS (含 trojan 默认 TLS) 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
       if ((proxy.type === 'trojan' || proxy.type === 'hysteria2' || proxy.type === 'tuic' || proxy.tls) && !proxy['reality-opts']) {
@@ -520,9 +532,6 @@ function main(config) {
 
   // 尊重客户端与上游设置：未提供时才赋予安全保底，不强行覆盖用户在界面自定义的端口与偏好
   newConfig['ipv6'] = isIpv6;
-  if (!newConfig['mixed-port'] && !newConfig['port']) {
-    newConfig['mixed-port'] = 7890;
-  }
   if (!newConfig['mode']) {
     newConfig['mode'] = 'rule';
   }
@@ -534,19 +543,62 @@ function main(config) {
     newConfig['external-controller'] = config['external-controller'];
   }
 
-  delete newConfig['tun'];
-  delete newConfig['sniffer'];
-  delete newConfig['experimental'];
-  delete newConfig['url-rewrite'];
-  delete newConfig['script'];
-  delete newConfig['clash-for-android'];
-  delete newConfig['external-ui'];
-  delete newConfig['external-ui-url'];
-  delete newConfig['global-client-fingerprint'];
+  if (ENABLE_CONFIG_CLEANUP) {
+    // 1. 局域网控制权归还客户端 GUI：剔除 bind-address 与硬编码网卡，恢复界面开关绝对控制
+    delete newConfig['bind-address'];
+    delete newConfig['allow-lan'];
+    delete newConfig['interface-name'];
+    delete newConfig['routing-mark'];
 
-  for (const key of Object.keys(newConfig)) {
-    if (key.startsWith('cfw-')) {
-      delete newConfig[key];
+    // 2. 端口收敛：剔除多余分离端口，统一使用 mixed-port
+    delete newConfig['port'];
+    delete newConfig['socks-port'];
+    delete newConfig['redir-port'];
+    delete newConfig['tproxy-port'];
+
+    // 确保混合端口保底存在
+    if (!newConfig['mixed-port']) {
+      newConfig['mixed-port'] = 7890;
+    }
+
+    // 3. 安全防护：防范控制器被强塞密码导致 FlClash 面板失联
+    delete newConfig['secret'];
+
+    // 4. 底层探测保护：消除移动端无权限时的频繁日志与发热
+    delete newConfig['tun'];
+    delete newConfig['sniffer'];
+    delete newConfig['experimental'];
+    delete newConfig['ebpf'];
+    delete newConfig['find-process-mode'];
+    delete newConfig['geodata-mode'];
+    delete newConfig['geox-url'];
+
+    // 5. 客户端历史残留参数清理
+    delete newConfig['url-rewrite'];
+    delete newConfig['script'];
+    delete newConfig['clash-for-android'];
+    delete newConfig['external-ui'];
+    delete newConfig['external-ui-url'];
+    delete newConfig['global-client-fingerprint'];
+
+    for (const key of Object.keys(newConfig)) {
+      if (key.startsWith('cfw-') || key.startsWith('clash-')) {
+        delete newConfig[key];
+      }
+    }
+  } else {
+    // 安全兜底还原模式：未开启清洗时仅清理会导致客户端报错的专有 UI 杂项，其余 100% 原始放行
+    if (!newConfig['mixed-port'] && !newConfig['port']) {
+      newConfig['mixed-port'] = 7890;
+    }
+    delete newConfig['tun'];
+    delete newConfig['clash-for-android'];
+    delete newConfig['external-ui'];
+    delete newConfig['external-ui-url'];
+    for (const key of Object.keys(newConfig)) {
+      if (key.startsWith('cfw-')) {
+        delete newConfig[key];
+      }
     }
   }
 
