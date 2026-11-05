@@ -404,11 +404,6 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
 
   const hosts = {
     ...projectedHosts,
-    'doh.pub': ['1.12.12.12', '120.53.53.53'],
-    'dns.alidns.com': ['223.5.5.5', '223.6.6.6'],
-    'cloudflare-dns.com': ['1.1.1.1', '1.0.0.1'],
-    'dns.google': ['8.8.8.8', '8.8.4.4'],
-    'services.googleapis.cn': 'services.googleapis.com',
     '+.mcdn.bilivideo.com': ['0.0.0.0'],
     '+.mcdn.bilivideo.cn': ['0.0.0.0'],
     '+.edge.mountaintoys.cn': ['0.0.0.0'],
@@ -506,10 +501,6 @@ function main(config) {
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
-    'AND,((DST-PORT,3478),(NETWORK,UDP)),DIRECT',
-    'DST-PORT,5349,DIRECT',
-    'DST-PORT,19302,节点选择',
-    'DST-PORT,19305,节点选择',
     'RULE-SET,apple_cn,DIRECT',
     'RULE-SET,microsoft_cn,DIRECT',
     'RULE-SET,steam_cn,DIRECT',
