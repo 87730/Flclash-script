@@ -22,7 +22,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ## 特性
 
 - **单卡片极简美学**：主界面仅保留唯一的核心卡片 `节点选择`，彻底去除冗余的多级分流卡片，告别滑动地狱。
-- **对齐 NekoBox 广告精准拦截**：引入 `category-ads-all.mrs` 规则集并严格置于 `cn.mrs` 之前拦截，阻断字节跳动穿山甲（CSJ / Pangolin）、腾讯优量汇（GDT）、百度百青藤等移动端主流广告联盟。红果短剧等短剧 App 滑动插屏广告直接跳过无缝连播，日常软件第三方开屏广告秒进主页；同时规则集构建链内置防误杀白名单（排除小米推送 `app.chat.xiaomi.net`、京东在线客服、淘宝小程序引擎等），绝不误伤系统核心组件。
+- **广告拦截**：引入 `category-ads-all.mrs` 规则集并严格置于 `cn.mrs` 之前拦截，阻断字节跳动穿山甲（CSJ / Pangolin）、腾讯优量汇（GDT）、百度百青藤等移动端主流广告联盟。红果短剧等短剧 App 滑动插屏广告直接跳过无缝连播，日常软件第三方开屏广告秒进主页；同时规则集构建链内置防误杀白名单（排除小米推送 `app.chat.xiaomi.net`、京东在线客服、淘宝小程序引擎等），绝不误伤系统核心组件。
 - **STUN 通信与 WebRTC 分流权衡**：遵循 RFC 5389 与 RFC 7064 规范端口分配，将标准 STUN 端口（`3478`，UDP）与安全加密 STUNS 端口（`5349`，全协议支持 TLS-over-TCP 与 DTLS）配置为内核原生 `DIRECT` 直连。这属于有意识的工程取舍：优先保障微信语音、微信视频通话、腾讯会议与国内端对端通信秒接通、零卡顿且无单向静音，避免语音包绕道海外代理造成的高延迟与中继丢包（网页通过 3478 发起 WebRTC 探测时会返回真实出口 IP）；同时将海外 WebRTC 专有端口（`19302` / `19305`）导向 `节点选择`（代理出海），兼顾国内通信与海外会议。
 - **大文件与游戏下载满速直连防偷跑**：独立分离苹果服务（`apple@cn.mrs`）、微软服务（`microsoft@cn.mrs`）与 Steam 游戏下载（`steam@cn.mrs`）走内核原生 `DIRECT` 直连出站，保障由规则集覆盖的 App Store 软件下载、iOS 固件更新、Windows Update 与 Steam 游戏下载跑满家宽千兆速度，不偷跑机场海外流量。
 - **局域网与路由器解析闭环**：在 `nameserver-policy` 中配置 `'rule-set:private': 'system'`，确保访问路由器管理后台（`tplogin.cn`、`miwifi.com`、`router.asus.com`）或局域网 NAS 域名时由当前物理 WiFi 原生 DNS 秒解，彻底根除私有域名被误发至海外代理 DNS 返回 NXDOMAIN 的故障。
