@@ -23,11 +23,11 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 
 - **单卡片极简美学**：主界面仅保留唯一的核心卡片 `节点选择`，彻底去除冗余的多级分流卡片，告别滑动地狱。
 - **对齐 NekoBox 广告精准拦截**：引入 `category-ads-all.mrs` 规则集并严格置于 `cn.mrs` 之前拦截，阻断字节跳动穿山甲（CSJ / Pangolin）、腾讯优量汇（GDT）、百度百青藤等移动端主流广告联盟。红果短剧等短剧 App 滑动插屏广告直接跳过无缝连播，日常软件第三方开屏广告秒进主页；同时规则集构建链内置防误杀白名单（排除小米推送 `app.chat.xiaomi.net`、京东在线客服、淘宝小程序引擎等），绝不误伤系统核心组件。
-- **STUN 通信与 WebRTC 分流优化**：根据 RFC 7064 标准，将标准 STUN 端口（`3478`）与安全加密 STUNS 端口（`5349`）配置为内核原生 `DIRECT` 直连，确保微信语音通话、微信视频、腾讯会议秒接通、零卡顿且无单向静音；同时将海外 WebRTC 专有端口（`19302` / `19305`）导向 `节点选择`（代理出海），兼顾国内通信与海外会议。
+- **STUN 通信与 WebRTC 分流权衡**：遵循 RFC 5389 与 RFC 7064 规范端口分配，将标准 STUN 端口（`3478`，UDP）与安全加密 STUNS 端口（`5349`，全协议支持 TLS-over-TCP 与 DTLS）配置为内核原生 `DIRECT` 直连。这属于有意识的工程取舍：优先保障微信语音、微信视频通话、腾讯会议与国内端对端通信秒接通、零卡顿且无单向静音，避免语音包绕道海外代理造成的高延迟与中继丢包（网页通过 3478 发起 WebRTC 探测时会返回真实出口 IP）；同时将海外 WebRTC 专有端口（`19302` / `19305`）导向 `节点选择`（代理出海），兼顾国内通信与海外会议。
 - **大文件与游戏下载满速直连防偷跑**：独立分离苹果服务（`apple@cn.mrs`）、微软服务（`microsoft@cn.mrs`）与 Steam 游戏下载（`steam@cn.mrs`）走内核原生 `DIRECT` 直连出站，保障由规则集覆盖的 App Store 软件下载、iOS 固件更新、Windows Update 与 Steam 游戏下载跑满家宽千兆速度，不偷跑机场海外流量。
 - **局域网与路由器解析闭环**：在 `nameserver-policy` 中配置 `'rule-set:private': 'system'`，确保访问路由器管理后台（`tplogin.cn`、`miwifi.com`、`router.asus.com`）或局域网 NAS 域名时由当前物理 WiFi 原生 DNS 秒解，彻底根除私有域名被误发至海外代理 DNS 返回 NXDOMAIN 的故障。
 - **现代 TUN 虚拟网卡死循环防御**：将保留网段拦截从过时的 `172.19.0.0/30` 升级为 `198.18.0.0/30`（精准对齐 FlClash Android 端的实际虚拟网卡 IP），有效防止 Android 系统在直连路由时产生内核自循环死锁。
-- **外部控制器安全加固**：当清洗模式移除机场硬编码的随机密码时，自动检测外部控制器监听地址，若发现非本地回环地址（如 `0.0.0.0`），强制收敛重写为 `127.0.0.1:9090`，彻底杜绝随身 WiFi 或局域网环境下的免密裸奔接管隐患。
+- **外部控制器安全加固**：当清洗模式移除机场硬编码的随机密码时，自动检测外部控制器监听地址，若发现非本地回环地址（如 `0.0.0.0`），保留原端口并强制收敛重写为 `127.0.0.1:<原端口>`（无端口时保底 9090），彻底杜绝随身 WiFi 或局域网环境下的免密裸奔接管隐患。
 - **节点指纹修复与协议适配**：针对 Trojan/VMess/VLESS 普通 TLS 补全 Chrome uTLS 指纹；针对 Reality 节点若订阅缺指纹自动补齐 `chrome`（已有指纹不覆盖，防止新版 Mihomo 因缺少指纹报错拒载）；遵循协议底层事实，不对基于 QUIC 的 Hysteria2 与 TUIC 节点做冗余指纹配置。
 - **白名单精准分流**：采用权威全量的纯血大陆域名白名单 `cn.mrs`（完整递归收录微信、QQ、淘宝、京东、B站等国内主流大厂全生态），拦截国外 QUIC 流量（带 no-resolve 防 DNS 泄漏并逼退 TCP 秒开），国内服务与局域网直接走内核原生 `DIRECT` 直连，国外全协议流量通过 `节点选择` 满血转发出海。
 - **轻量二进制规则集**：规则内容来源于 **经过移动端深度调优的 `bett-rules` 官方仓库**，通过全球 jsDelivr CDN 加速交付，全量编译为 `.mrs` 紧凑二进制格式，针对移动端网络环境调优，加载极速，闪存与内存占用极低。
@@ -56,7 +56,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
   4. RULE-SET,private,DIRECT                      - 内网与局域网域名直连
   5. RULE-SET,private_ip,DIRECT                   - 内网与局域网 IP 直连
   6. AND,((DST-PORT,3478),(NETWORK,UDP)),DIRECT   - STUN 语音/视频会议端对端直通 (微信电话/腾讯会议秒通无静音)
-  7. AND,((DST-PORT,5349),(NETWORK,UDP)),DIRECT   - STUNS 安全加密通话端对端直通 (RFC 7064 标准加密打洞)
+  7. DST-PORT,5349,DIRECT                         - 安全加密 STUNS 通信直连 (RFC 5389/7064 规范端口，支持 TLS-over-TCP 与 DTLS)
   8. DST-PORT,19302,节点选择                      - Google WebRTC 语音通道 (Discord/Meet 代理出海)
   9. DST-PORT,19305,节点选择                      - Google WebRTC 备用语音通道 (代理出海)
   10. RULE-SET,apple_cn,DIRECT                    - 苹果应用商店与固件直连 (apple@cn.mrs 满速防耗流量)

@@ -507,7 +507,7 @@ function main(config) {
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
     'AND,((DST-PORT,3478),(NETWORK,UDP)),DIRECT',
-    'AND,((DST-PORT,5349),(NETWORK,UDP)),DIRECT',
+    'DST-PORT,5349,DIRECT',
     'DST-PORT,19302,节点选择',
     'DST-PORT,19305,节点选择',
     'RULE-SET,apple_cn,DIRECT',
@@ -546,8 +546,6 @@ function main(config) {
   if (!newConfig['log-level']) {
     newConfig['log-level'] = 'warning';
   }
-
-
 
   if (ENABLE_CONFIG_CLEANUP) {
     // 1. 局域网控制权归还客户端 GUI：剔除 bind-address 与硬编码网卡，恢复界面开关绝对控制
@@ -593,7 +591,7 @@ function main(config) {
       }
     }
   } else {
-    // 安全兜底还原模式：未开启清洗时仅清理会导致客户端报错的专有 UI 杂项，其余 100% 原始放行
+    // 安全兜底还原模式：未开启清洗时仅清理 tun 与会导致客户端报错的专有 UI 杂项，其余原样保留
     if (!newConfig['mixed-port'] && !newConfig['port']) {
       newConfig['mixed-port'] = 7890;
     }
