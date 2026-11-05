@@ -125,7 +125,8 @@ function matchDomainPattern(pattern, domains) {
   const domainList = typeof domains === 'string' ? [domains.toLowerCase()] : [...domains].map((d) => d.toLowerCase());
 
   if (pattern.includes('*')) {
-    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    // Mihomo 域名树中 * 只匹配单级标签（component/trie/domain.go），这里保持一致
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^.]+');
     const regex = new RegExp(`^${escaped}$`, 'i');
     return domainList.some((d) => regex.test(d));
   }
@@ -452,8 +453,12 @@ function main(config) {
 
   const { dns, hosts, proxies: mappedProxies } = buildDnsAndHostsConfig(config, filteredProxies, isIpv6);
 
-  const fpTypes = ['trojan', 'vless', 'vmess', 'hysteria2', 'tuic'];
-  for (const proxy of mappedProxies) {
+  // uTLS 指纹只对基于 TCP 的 TLS 生效；hysteria2 / tuic 走 QUIC，不适用
+  const fpTypes = ['trojan', 'vless', 'vmess'];
+  for (let i = 0; i < mappedProxies.length; i++) {
+    // 复制一份再修改，避免改动原始订阅对象
+    const proxy = { ...mappedProxies[i] };
+    mappedProxies[i] = proxy;
     // 清理节点中的 null/undefined 异常键值（如某些 Hysteria2 节点下发的 up: null, down: null）
     for (const [k, v] of Object.entries(proxy)) {
       if (v === null || v === undefined) {
@@ -462,8 +467,9 @@ function main(config) {
     }
 
     if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
-      // 仅对普通 TLS (含 trojan 默认 TLS) 补全 Chrome 指纹；Reality 节点保持原版/随机伪装，不强行覆盖
-      if ((proxy.type === 'trojan' || proxy.type === 'hysteria2' || proxy.type === 'tuic' || proxy.tls) && !proxy['reality-opts']) {
+      // 普通 TLS（含 trojan 默认 TLS）补 Chrome 指纹；
+      // Reality 必须依赖 uTLS，最新 Mihomo 已移除 global-client-fingerprint，缺指纹会直接报错，故同样补上；已有指纹则不覆盖
+      if (proxy.type === 'trojan' || proxy.tls || proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
       }
     }
@@ -495,13 +501,13 @@ function main(config) {
   // 规则链：系统协议与大文件直连 -> 广告拦截 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
     'DST-PORT,853,REJECT',
-    'IP-CIDR,172.19.0.0/30,REJECT,no-resolve',
+    // 当前 Mihomo / FlClash 的 TUN 地址为 198.18.0.1/30（旧版为 172.19.0.1/30）；fake-ip 从 198.18.0.4 起分配，不受影响
+    'IP-CIDR,198.18.0.0/30,REJECT,no-resolve',
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
     'RULE-SET,private_ip,DIRECT',
-    'DOMAIN-KEYWORD,stun,节点选择',
-    'DOMAIN-KEYWORD,turn,节点选择',
-    'DST-PORT,3478,节点选择',
+    'AND,((DST-PORT,3478),(NETWORK,UDP)),DIRECT',
+    'AND,((DST-PORT,5349),(NETWORK,UDP)),DIRECT',
     'DST-PORT,19302,节点选择',
     'DST-PORT,19305,节点选择',
     'RULE-SET,apple_cn,DIRECT',
@@ -541,9 +547,7 @@ function main(config) {
     newConfig['log-level'] = 'warning';
   }
 
-  if (config['external-controller']) {
-    newConfig['external-controller'] = config['external-controller'];
-  }
+
 
   if (ENABLE_CONFIG_CLEANUP) {
     // 1. 局域网控制权归还客户端 GUI：剔除 bind-address 与硬编码网卡，恢复界面开关绝对控制
@@ -604,11 +608,24 @@ function main(config) {
     }
   }
 
-  // 彻底拔除机场订阅自带的后台自动测速与健康检查
-  if (newConfig['proxy-providers']) {
-    for (const key of Object.keys(newConfig['proxy-providers'])) {
-      delete newConfig['proxy-providers'][key]['health-check'];
+  // 控制器安全：没有密码时，绝不让外部控制器监听在局域网/公网地址上
+  const controller = newConfig['external-controller'];
+  if (!newConfig['secret'] && typeof controller === 'string' && controller.length > 0) {
+    const portMatch = controller.match(/:(\d+)$/);
+    const isLoopback = /^(?:127\.0\.0\.1|localhost|\[::1\]):/i.test(controller);
+    if (!isLoopback) {
+      newConfig['external-controller'] = `127.0.0.1:${portMatch ? portMatch[1] : '9090'}`;
     }
+  }
+
+  // 彻底拔除机场订阅自带的后台自动测速与健康检查（复制后再改，不动原始对象）
+  if (newConfig['proxy-providers']) {
+    const providers = {};
+    for (const [key, provider] of Object.entries(newConfig['proxy-providers'])) {
+      const { 'health-check': _healthCheck, ...rest } = provider || {};
+      providers[key] = rest;
+    }
+    newConfig['proxy-providers'] = providers;
   }
 
   return newConfig;
