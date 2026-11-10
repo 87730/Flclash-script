@@ -11,7 +11,9 @@ const ENABLE_CONFIG_CLEANUP = true;
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
-// 屏蔽国外QUIC（UDP 443 -> REJECT，带 no-resolve 防泄漏）
+// 屏蔽国外 QUIC（UDP 443 -> REJECT）。
+// 国内域名的 QUIC 已在前置 cn 规则集直连；此处按真实 IP 区分国内外：
+// 纯国内 IP 的 QUIC 放行、国外域名/IP 的 QUIC 拦截（cn_ip + no-resolve 避免多余解析）
 const blockForeignQuic = [
   'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
 ];
@@ -97,6 +99,16 @@ const commonDnsIps = new Set([
 ]);
 
 const chinaBootstrapDNS = ['223.5.5.5', '119.29.29.29'];
+// 节点域名解析兜底：加密 DoH，避免明文 UDP 被污染/篡改导致节点解析失败
+const chinaProxyServerDNS = [
+  'https://223.5.5.5/dns-query',
+  'https://1.12.12.12/dns-query',
+];
+// DIRECT 直连域名解析同样使用加密 DoH（内网私有域名仍走 system，属于合理例外）
+const chinaDirectDNS = [
+  'https://223.5.5.5/dns-query',
+  'https://1.12.12.12/dns-query',
+];
 const chinaDNS = [
   'https://223.5.5.5/dns-query#DIRECT',
   'https://1.12.12.12/dns-query#DIRECT',
@@ -349,11 +361,11 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
       '+.pool.ntp.org',
       ...proxyFakeIpFilter,
     ],
-    // 节点服务器域名解析：优先继承专线专属私有 DNS，未提供时由纯明文 IP 兜底秒连
+    // 节点服务器域名解析：优先继承专线专属私有 DNS，未提供时由加密 DoH 兜底（防明文污染）
     'proxy-server-nameserver':
       privateProxyServerNameservers.length > 0
-        ? [...new Set([...privateProxyServerNameservers, ...chinaBootstrapDNS])]
-        : chinaBootstrapDNS,
+        ? [...new Set([...privateProxyServerNameservers, ...chinaProxyServerDNS])]
+        : chinaProxyServerDNS,
     ...(Object.keys(proxyServerPolicy).length > 0 && {
       'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
@@ -364,7 +376,7 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
       'rule-set:private': 'system',
       'rule-set:cn': chinaDNS,
     },
-    'direct-nameserver': chinaBootstrapDNS,
+    'direct-nameserver': chinaDirectDNS,
     'direct-nameserver-follow-policy': true,
   };
 
@@ -496,7 +508,7 @@ function main(config) {
   // 规则链：系统协议与大文件直连 -> 广告拦截 -> 国内直连 -> 国外QUIC拦截 -> 兜底出海
   const rules = [
     'DST-PORT,853,REJECT',
-    // 当前 Mihomo / FlClash 的 TUN 地址为 198.18.0.1/30（旧版为 172.19.0.1/30）；fake-ip 从 198.18.0.4 起分配，不受影响
+    // TUN 虚拟网卡保留网段（新版 Mihomo 已内置跳过 TUN 地址段转发，此处为冗余兜底，兼容旧内核）
     'IP-CIDR,198.18.0.0/30,REJECT,no-resolve',
     'AND,((DST-PORT,123),(NETWORK,udp)),DIRECT',
     'RULE-SET,private,DIRECT',
