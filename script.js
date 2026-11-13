@@ -526,7 +526,8 @@ function main(config) {
     'RULE-SET,steam_cn,DIRECT',
     'RULE-SET,ads,REJECT',
     'RULE-SET,cn,DIRECT',
-    ...blockForeignQuic,
+    // [已停用] 屏蔽国外 QUIC：TikTok 等视频流因此回退 TCP，实测 4 分钟触发 28 次重试
+    // ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',
     'MATCH,节点选择',
   ];
