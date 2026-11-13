@@ -15,7 +15,7 @@ const excludeFilter =
 // 国内域名的 QUIC 已在前置 cn 规则集直连；此处按真实 IP 区分国内外：
 // 纯国内 IP 的 QUIC 放行、国外域名/IP 的 QUIC 拦截（cn_ip + no-resolve 避免多余解析）
 const blockForeignQuic = [
-  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn_ip,no-resolve)))),REJECT',
+  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn),(RULE-SET,cn_ip,no-resolve)))))),REJECT',
 ];
 
 const ruleProviderCommonDomain = {
@@ -39,6 +39,11 @@ const ruleProviders = {
     ...ruleProviderCommonDomain,
     url: `${RS_BASE}/geosite/private.mrs`,
     path: './ruleset/private.mrs',
+  },
+  fakeip_filter: {
+    ...ruleProviderCommonDomain,
+    url: `${RS_BASE}/geosite/fakeip-filter.mrs`,
+    path: './ruleset/fakeip-filter.mrs',
   },
   private_ip: {
     ...ruleProviderCommonIpcidr,
@@ -353,6 +358,7 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
     'fake-ip-range6': '2001:2::1/48',
     'fake-ip-filter': [
       'rule-set:private',
+      'rule-set:fakeip_filter',
       'localhost.ptlogin2.qq.com',
       '+.lan',
       '+.local',
@@ -416,6 +422,8 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6) {
 
   const hosts = {
     ...projectedHosts,
+    // 修复 Google Play 能打开但下载卡住（.cn 域名映射到 .com）
+    'services.googleapis.cn': 'services.googleapis.com',
     '+.mcdn.bilivideo.com': ['0.0.0.0'],
     '+.mcdn.bilivideo.cn': ['0.0.0.0'],
     '+.edge.mountaintoys.cn': ['0.0.0.0'],
