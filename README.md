@@ -2,8 +2,6 @@
 
 Mihomo 与 FlClash 配置覆写脚本。
 
-[简体中文](README.md) | [English](README.en.md)
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Runtime: JavaScript](https://img.shields.io/badge/Runtime-JavaScript-yellow.svg)](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript)
 
@@ -26,7 +24,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 - **广告拦截**：使用 `category-ads-all` 规则集，置于国内规则之前。
 - **DNS 加固**：Fake-IP 池（`198.18.0.1/15`、`2001:2::1/48`）+ `respect-rules`；海外域名走 Google/Cloudflare DoH（经节点选择），国内与 DIRECT 域名走阿里/腾讯 DoH，节点域名由阿里/腾讯 DoH 兜底；内网私有域名走 `system`。
 - **节点处理**：过滤订阅信息节点（流量、到期、官网等），重名自动编号；Trojan/VMess/VLESS 缺指纹时补 `chrome`（已有指纹不覆盖）；支持专线私有 DNS 与 Hosts 继承改写。
-- **安全清理**：移除 `bind-address`、`allow-lan`、`interface-name` 等硬编码；外部控制器无密码时强制收敛到回环地址；清理 `global-client-fingerprint` 等旧版残留字段。
+- **安全清理**：移除 `bind-address`、`allow-lan`、`interface-name` 等硬编码；订阅里的 `secret` / `external-controller` / `external-ui` 默认删除，控制权交还客户端（远程管理可开 `ALLOW_REMOTE_CONTROLLER`）；清理 `global-client-fingerprint` 等旧版残留字段。
 - **偏好保底**：仅在未设置时补 `mixed-port: 7890`、`mode: rule`、`log-level: warning`，不覆盖客户端已有设置。
 - **轻量规则集**：使用 `bett-rules` 的 `.mrs` 二进制规则集，经 jsDelivr 分发。
 
@@ -35,11 +33,11 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ## 规则顺序
 
 ```text
-  1. DST-PORT,853,REJECT                          - 拦截 DoT，防止绕过分流
-  2. IP-CIDR,198.18.0.0/30,REJECT,no-resolve      - TUN 保留网段兜底
-  3. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 对时直连
-  4. RULE-SET,private,DIRECT                      - 内网域名直连
-  5. RULE-SET,private_ip,DIRECT                   - 内网 IP 直连
+  1. IP-CIDR,198.18.0.0/30,REJECT,no-resolve      - TUN 保留网段兜底
+  2. AND,((DST-PORT,123),(NETWORK,udp)),DIRECT    - NTP 对时直连
+  3. RULE-SET,private,DIRECT                      - 内网域名直连
+  4. RULE-SET,private_ip,DIRECT                   - 内网 IP 直连
+  5. DST-PORT,853,REJECT                          - 拦截 DoT（排在内网规则之后，不误伤内网 DoT）
   6. RULE-SET,apple_cn,DIRECT                     - 苹果服务直连
   7. RULE-SET,microsoft_cn,DIRECT                 - 微软服务直连
   8. RULE-SET,steam_cn,DIRECT                     - Steam 下载直连
