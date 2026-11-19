@@ -44,6 +44,12 @@ const NODE_HINT =
 const INFO_STRONG =
   /剩余流量|套餐到期|距离下次|下次重置|到期时间|已用流量|官网|网址导航|导航网址|\b(?:channel|panel|expire|expired|traffic|used|total)\b/i;
 
+// provider 节点在内核下载后才可见，无法在这里执行完整的 JS 四层判定；
+// 至少用强信息特征排除常见的套餐/官网节点，避免把带地区词的正常节点误删。
+// 用 scoped (?i:...) 而非前缀 (?i)：Go RE2、.NET regexp2、Rust regex 均支持，
+// 且只让本段大小写不敏感，不会外溢到用户原有的 exclude-filter 片段。
+const PROVIDER_INFO_EXCLUDE_FILTER = `(?i:${INFO_STRONG.source})`;
+
 // 弱信息特征：仅在名字没有任何地区/协议/倍率线索时才参与判定，避免误杀（如「香港 hk.example.net」）
 const INFO_WEAK =
   /群组|返利|循环|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|地址|频道|电报|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|免费|试用|应急|⚠️|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\bwww\.|\btraffic\b/iu;
@@ -86,11 +92,10 @@ const RESERVED_PROXY_NAMES = new Set([
 const NODE_GROUP_NAME = '节点选择';
 
 // 屏蔽国外 QUIC（UDP 443 -> REJECT）。
-// 国内域名的 QUIC 已在前置 cn 规则集直连；此处按真实 IP 区分国内外：
-// 纯国内 IP 的 QUIC 放行、国外域名/IP 的 QUIC 拦截（cn_ip + no-resolve 避免多余解析）
-const blockForeignQuic = [
-  'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn),(RULE-SET,cn_ip,no-resolve)))))),REJECT',
-];
+// 国内域名由前置 cn 规则直连，国内 IP 由紧随其前的 cn_ip 规则直连；
+// 这里只需拦截剩余 UDP 443。cn_ip 的 no-resolve 不会为了匹配该规则主动解析域名，
+// 但若之前已经取得真实 IP，仍可使用该结果匹配。
+const blockForeignQuic = ['AND,((NETWORK,UDP),(DST-PORT,443)),REJECT'];
 
 const ruleProviderCommonDomain = {
   type: 'http',
@@ -235,6 +240,52 @@ function matchDomainPattern(pattern, domains) {
   return false;
 }
 
+function hasNonEmptyHeader(headers, name) {
+  if (!isPlainObject(headers)) return false;
+  const key = Object.keys(headers).find((item) => item.toLowerCase() === name.toLowerCase());
+  if (!key) return false;
+  const value = headers[key];
+  if (Array.isArray(value)) return value.some((item) => typeof item === 'string' && item.trim() !== '');
+  return typeof value === 'string' ? value.trim() !== '' : value !== null && value !== undefined;
+}
+
+// 把节点 server 改成 IP 后，必须单独保留传输层 Host；顶层 proxy.host 不是 Mihomo 的通用字段。
+function transportHostPatch(proxy, server) {
+  const network = String(proxy.network ?? '').toLowerCase();
+
+  if (network === 'ws' || network === 'http') {
+    const optionName = network === 'ws' ? 'ws-opts' : 'http-opts';
+    const options = isPlainObject(proxy[optionName]) ? proxy[optionName] : {};
+    const headers = isPlainObject(options.headers) ? options.headers : {};
+    if (hasNonEmptyHeader(headers, 'host')) return {};
+
+    // HTTP 头大小写不敏感：剔除残留的 host 空键，避免与 Host 并存产生两个 Host 头
+    const cleaned = Object.fromEntries(
+      Object.entries(headers).filter(([name]) => name.toLowerCase() !== 'host'),
+    );
+
+    return {
+      [optionName]: {
+        ...options,
+        headers: {
+          ...cleaned,
+          // WS 使用字符串；HTTP 传输的 headers 值是字符串数组。
+          Host: network === 'ws' ? server : [server],
+        },
+      },
+    };
+  }
+
+  if (network === 'h2') {
+    const options = isPlainObject(proxy['h2-opts']) ? proxy['h2-opts'] : {};
+    if (toStringList(options.host).length > 0) return {};
+    return { 'h2-opts': { ...options, host: [server] } };
+  }
+
+  // gRPC 的 authority/SNI 由 servername 或 sni 保留，不需要额外的 Host 字段。
+  return {};
+}
+
 function applyHostsToProxies(proxies, hosts) {
   if (!hosts || typeof hosts !== 'object') return proxies;
 
@@ -304,18 +355,16 @@ function applyHostsToProxies(proxies, hosts) {
 
     if (!target) return proxy;
 
-    const isTrojanLike = ['trojan', 'hysteria', 'hysteria2', 'tuic', 'anytls'].includes(proxy.type);
-    const isVmessLike = ['vless', 'vmess'].includes(proxy.type);
+    const proxyType = String(proxy.type ?? '').toLowerCase();
+    const isTrojanLike = ['trojan', 'hysteria', 'hysteria2', 'tuic', 'anytls'].includes(proxyType);
+    const isVmessLike = ['vless', 'vmess'].includes(proxyType);
 
     return {
       ...proxy,
       server: target,
       ...(isVmessLike && !proxy.servername && { servername: server }),
       ...(isTrojanLike && !proxy.sni && { sni: server }),
-      ...(!proxy.host &&
-        ['ws', 'http', 'h2', 'grpc'].includes(proxy.network) && {
-          host: server,
-        }),
+      ...transportHostPatch(proxy, server),
     };
   });
 }
@@ -344,10 +393,36 @@ function isIpAddress(server) {
   );
 }
 
+// 统一提取 DNS 服务器主机名：兼容协议头、端口、路径及 #DIRECT/#策略组 后缀。
+// 只返回需要继承 hosts 的域名；IP、system、dhcp、rcode 等端点返回 null。
+function extractDnsHost(dns) {
+  // 先剥 # 后缀再判断 system/dhcp/rcode，否则 system#DIRECT 会把 system 当成主机名返回
+  let raw = String(dns ?? '').trim().split('#', 1)[0].trim();
+  if (!raw || /^(?:system|dhcp|rcode)(?::|$)/i.test(raw)) return null;
+  raw = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+  raw = raw.split(/[/?]/, 1)[0].trim();
+  if (!raw) return null;
+
+  let host;
+  if (raw.startsWith('[')) {
+    const closingBracket = raw.indexOf(']');
+    if (closingBracket === -1) return null;
+    host = raw.slice(1, closingBracket);
+  } else {
+    // 仅在“非冒号主机 + 数字端口”时移除端口，避免截断裸 IPv6。
+    host = /^[^:]+:\d+$/.test(raw) ? raw.replace(/:\d+$/, '') : raw;
+  }
+
+  host = host.trim().toLowerCase().replace(/\.$/, '');
+  return host && !isIpAddress(host) ? host : null;
+}
+
 // 判断是否是"本地/任意地址"监听：127.0.0.1、0.0.0.0、::、:53 等都应视为机场私有 DNS 入口
 function isLocalDnsEndpoint(value) {
   if (typeof value !== 'string') return false;
-  const v = value.trim().toLowerCase();
+  // 先剥掉协议头与 #DIRECT/#策略组 后缀，避免 udp://0.0.0.0:53、0.0.0.0:53#DIRECT 等写法漏判
+  let v = value.trim().toLowerCase().split('#', 1)[0].trim();
+  v = v.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[/?]/, 1)[0].trim();
   if (v === '') return false;
   if (v.includes('127.0.0.1') || v.includes('localhost') || v.includes('[::1]')) return true;
   return /^(?::\d+|0\.0\.0\.0(?::\d+)?|\[::\](?::\d+)?|::(?::\d+)?)$/.test(v);
@@ -376,10 +451,8 @@ function simplifyDomainPolicy(policy) {
   const resolverHosts = new Set();
   for (const dns of Object.values(policy)) {
     for (const item of Array.isArray(dns) ? dns : [dns]) {
-      const matched = String(item).match(/^(?:https?|tls|quic|h3):\/\/([^/?#]+)/i);
-      if (!matched) continue;
-      const host = matched[1].replace(/:\d+$/, '').toLowerCase();
-      if (host && !isIpAddress(host)) resolverHosts.add(host);
+      const host = extractDnsHost(item);
+      if (host) resolverHosts.add(host);
     }
   }
   const coversResolver = (suffix) =>
@@ -435,14 +508,21 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6, hasUsableProxy)
   ]);
 
   const isCommonDns = (dns) => {
-    const value = stripDnsSuffix(dns).trim().toLowerCase();
-    if (value === 'system' || value === 'system://') return true;
-    if (commonDnsIps.has(value)) return true;
+    // 先剥掉 #DIRECT/#策略组 等后缀再判断，避免 system#DIRECT、2400:3200::1#DIRECT 失配
+    let raw = String(dns ?? '').trim().split('#', 1)[0].trim().toLowerCase();
+    if (!raw || /^(?:system|dhcp|rcode)(?::|$)/i.test(raw)) return true;
+    if (commonDnsIps.has(raw)) return true;
 
-    const match = value.match(
-      /^(?:[a-z][a-z0-9+.-]*:\/\/)?(?:\[([^\]]+)\]|([^/:?#]+))/i,
-    );
-    const host = (match?.[1] || match?.[2] || value).toLowerCase().replace(/\.$/, '');
+    raw = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[/?]/, 1)[0].trim();
+    let host;
+    if (raw.startsWith('[')) {
+      const end = raw.indexOf(']');
+      host = end === -1 ? raw : raw.slice(1, end);
+    } else {
+      // 仅在「非冒号主机 + 数字端口」时移除端口，避免把裸 IPv6 截断
+      host = /^[^:]+:\d+$/.test(raw) ? raw.replace(/:\d+$/, '') : raw;
+    }
+    host = host.replace(/\.$/, '');
     return commonDnsIps.has(host) || commonDnsRegex.test(host);
   };
 
@@ -450,11 +530,14 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6, hasUsableProxy)
     ? []
     : proxyServerNameservers.map(stripDnsSuffix).filter((dns) => dns.length > 0 && !isCommonDns(dns));
 
+  // 触发本地嗅探重写时，机场声明的本地回环 DNS 已随 listen 一并失效，不能再写回任何解析策略
+  const isDeadLocalResolver = (dns) => shouldRewriteByHosts && isLocalDnsEndpoint(dns);
+
   const privateDNS = [
     ...new Set(
       [...toStringList(originalDnsConfig['nameserver']), ...privateProxyServerNameservers]
         .map(stripDnsSuffix)
-        .filter((dns) => dns.length > 0 && !isCommonDns(dns)),
+        .filter((dns) => dns.length > 0 && !isCommonDns(dns) && !isDeadLocalResolver(dns)),
     ),
   ];
 
@@ -468,8 +551,11 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6, hasUsableProxy)
     if (!matchDomainPattern(domain, activeNodeServers)) continue;
 
     const stripedDns = Array.isArray(dns)
-      ? toStringList(dns).map(stripDnsSuffix).filter(Boolean)
-      : typeof dns === 'string'
+      ? toStringList(dns)
+          .map(stripDnsSuffix)
+          .filter(Boolean)
+          .filter((item) => !isDeadLocalResolver(item))
+      : typeof dns === 'string' && !isDeadLocalResolver(stripDnsSuffix(dns))
         ? stripDnsSuffix(dns)
         : '';
     if ((Array.isArray(stripedDns) && stripedDns.length === 0) || stripedDns === '') continue;
@@ -545,7 +631,15 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6, hasUsableProxy)
     nameserver: hasUsableProxy ? foreignDNS : chinaDNS,
     'nameserver-policy': {
       'rule-set:private': 'system',
+      // 这些域名在路由中固定 DIRECT；首次真实解析也使用国内 DNS，避免 GeoDNS 结果与出口区域相反。
+      // 每个 rule-set 单独成键：Mihomo 下与逗号多值写法等价，Concord 等内核不依赖多值解析更稳。
       'rule-set:cn': chinaDNS,
+      'rule-set:apple_cn': chinaDNS,
+      'rule-set:microsoft_cn': chinaDNS,
+      'rule-set:steam_cn': chinaDNS,
+      'time.*.com': chinaDNS,
+      'time.*.apple.com': chinaDNS,
+      '+.pool.ntp.org': chinaDNS,
     },
     'direct-nameserver': chinaDirectDNS,
     'direct-nameserver-follow-policy': true,
@@ -566,17 +660,8 @@ function buildDnsAndHostsConfig(config, filteredProxies, isIpv6, hasUsableProxy)
     ...privateProxyServerNameservers,
   ];
   extractResolvers.forEach((resolver) => {
-    const raw = String(resolver).trim();
-    let host = '';
-    const m = raw.match(/^(?:https?|tls|udp|tcp):\/\/([A-Za-z0-9.-]+)/i);
-    if (m) {
-      host = m[1];
-    } else if (!isIpAddress(raw)) {
-      host = raw;
-    }
-    if (host && !isIpAddress(host)) {
-      targetHostDomains.add(host.toLowerCase());
-    }
+    const host = extractDnsHost(resolver);
+    if (host) targetHostDomains.add(host);
   });
 
   const rawHosts = isPlainObject(config.hosts) ? config.hosts : {};
@@ -734,10 +819,11 @@ function main(config) {
       }
     }
 
-    if (fpTypes.includes(proxy.type) && !proxy['client-fingerprint']) {
+    const proxyType = String(proxy.type ?? '').toLowerCase();
+    if (fpTypes.includes(proxyType) && !proxy['client-fingerprint']) {
       // 普通 TLS（含 trojan 默认 TLS）补 Chrome 指纹；
       // Reality 必须依赖 uTLS，最新 Mihomo 已移除 global-client-fingerprint，缺指纹会直接报错，故同样补上；已有指纹则不覆盖
-      if (proxy.type === 'trojan' || proxy.tls || proxy['reality-opts']) {
+      if (proxyType === 'trojan' || proxy.tls || proxy['reality-opts']) {
         proxy['client-fingerprint'] = 'chrome';
       }
     }
@@ -787,9 +873,9 @@ function main(config) {
     'RULE-SET,steam_cn,DIRECT',
     'RULE-SET,ads,REJECT',
     'RULE-SET,cn,DIRECT',
-    // 屏蔽国外QUIC
-    ...blockForeignQuic,
     'RULE-SET,cn_ip,DIRECT,no-resolve',
+    // 国内域名/IP 已在上面直连，此处拦截剩余的国外 QUIC
+    ...blockForeignQuic,
     `MATCH,${NODE_GROUP_NAME}`,
   ];
 
@@ -874,9 +960,6 @@ function main(config) {
       if (!newConfig['external-ui-url']) {
         newConfig['external-ui-url'] = 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip';
       }
-    } else {
-      delete newConfig['external-ui'];
-      delete newConfig['external-ui-url'];
     }
     delete newConfig['global-client-fingerprint'];
 
@@ -913,7 +996,7 @@ function main(config) {
     }
   }
 
-  // 彻底拔除机场订阅自带的后台自动测速与健康检查（复制后再改，不动原始对象）
+  // 拔除 provider 健康检查，并过滤强特征信息节点（复制后再改，不动原始对象）
   if (newConfig['proxy-providers']) {
     if (!isPlainObject(newConfig['proxy-providers'])) {
       // 非对象形态（字符串/数组）的 proxy-providers 是废数据，直接剔除，
@@ -923,6 +1006,16 @@ function main(config) {
       const providers = {};
       for (const [key, provider] of Object.entries(newConfig['proxy-providers'])) {
         const { 'health-check': _healthCheck, ...rest } = provider || {};
+        const existing = typeof rest['exclude-filter'] === 'string' ? rest['exclude-filter'].trim() : '';
+        if (!existing || !existing.includes(PROVIDER_INFO_EXCLUDE_FILTER)) {
+          // 用 | 连接而非反引号分段：Mihomo v1.19.34 源码两种写法都支持（按 ` 逐段编译），
+          // 但按单条正则编译的内核会把反引号当字面量；新增段自带 scoped (?i:...)，
+          // 用户原有片段保持大小写敏感，原有反引号分段拆开各自包组，保持「任一段命中即排除」语义。
+          const segments = existing
+            ? existing.split('`').map((item) => item.trim()).filter(Boolean)
+            : [];
+          rest['exclude-filter'] = [...segments.map((item) => `(?:${item})`), PROVIDER_INFO_EXCLUDE_FILTER].join('|');
+        }
         providers[key] = rest;
       }
       newConfig['proxy-providers'] = providers;

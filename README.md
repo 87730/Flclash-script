@@ -20,7 +20,7 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
 ## 特性
 
 - **单策略组**：只保留「节点选择」手动分组，不生成多余卡片，不引入自动测速。
-- **白名单分流**：内网、苹果、微软、Steam 与国内规则集直连，`cn_ip` 兜底，其余流量走代理；国外 QUIC（UDP 443）按国内 IP 集合豁免后拦截，回退 TCP。
+- **白名单分流**：内网、苹果、微软、Steam 与国内规则集直连，`cn_ip` 兜底，其余流量走代理；国内域名与 IP 已前置直连，其余国外 QUIC（UDP 443）拦截，回退 TCP。
 - **广告拦截**：使用 `category-ads-all` 规则集，置于国内规则之前。
 - **DNS 加固**：Fake-IP 池（`198.18.0.1/15`、`2001:2::1/48`）+ `respect-rules`；海外域名走 Google/Cloudflare DoH（经节点选择），国内与 DIRECT 域名走阿里/腾讯 DoH，节点域名由阿里/腾讯 DoH 兜底；内网私有域名走 `system`。
 - **节点处理**：过滤订阅信息节点（流量、到期、官网等），重名自动编号；Trojan/VMess/VLESS 缺指纹时补 `chrome`（已有指纹不覆盖）；支持专线私有 DNS 与 Hosts 继承改写。
@@ -43,8 +43,8 @@ https://raw.githubusercontent.com/87730/Flclash-script/main/script.js
   8. RULE-SET,steam_cn,DIRECT                     - Steam 下载直连
   9. RULE-SET,ads,REJECT                          - 广告拦截
   10. RULE-SET,cn,DIRECT                          - 国内域名直连
-  11. blockForeignQuic (AND UDP 443),REJECT       - 拦截国外 QUIC，回退 TCP
-  12. RULE-SET,cn_ip,DIRECT,no-resolve            - 国内 IP 兜底直连
+  11. RULE-SET,cn_ip,DIRECT,no-resolve            - 国内 IP 兜底直连
+  12. blockForeignQuic (AND UDP 443),REJECT       - 拦截国外 QUIC，回退 TCP
   13. MATCH,节点选择                              - 其余流量走代理
 ```
 
